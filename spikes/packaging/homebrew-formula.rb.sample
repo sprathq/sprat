@@ -1,0 +1,50 @@
+# Sketch only — NOT a real formula, no tap created. See
+# docs/phase0/04-packaging-spike.md for the packaging decision this assumes
+# (plain `mix release` tarball per target, not a Burrito single-file binary,
+# per the Phase 0 finding that Burrito 1.6.0 doesn't run the app).
+#
+# Would live at homebrew-sprat/Formula/sprat.rb in a tap repo
+# (sprathq/homebrew-tap), installed via `brew install sprathq/tap/sprat`.
+
+class Sprat < Formula
+  desc "Terminal research and product-shaping agent"
+  homepage "https://sprat.dev"
+  version "1.0.0"
+  license "TBD" # spec §17 open decision 4
+
+  on_macos do
+    on_arm do
+      url "https://github.com/<org>/sprat/releases/download/v1.0.0/sprat-1.0.0-macos-arm64.tar.gz"
+      sha256 "<checksum>"
+    end
+
+    on_intel do
+      url "https://github.com/<org>/sprat/releases/download/v1.0.0/sprat-1.0.0-macos-x86_64.tar.gz"
+      sha256 "<checksum>"
+    end
+  end
+
+  on_linux do
+    on_intel do
+      url "https://github.com/<org>/sprat/releases/download/v1.0.0/sprat-1.0.0-linux-x86_64.tar.gz"
+      sha256 "<checksum>"
+    end
+  end
+
+  # Each tarball is a plain `mix release` (ERTS bundled) built natively per
+  # target, not a Burrito binary — see the decision record. `bin/sprat` is
+  # the release's own generated script; the formula wraps it so `sprat`
+  # resolves without the version/path segment the release script expects.
+  def install
+    libexec.install Dir["*"]
+    (bin / "sprat").write <<~SH
+      #!/bin/bash
+      exec "#{libexec}/bin/sprat" eval "Sprat.CLI.main(System.argv())" "$@"
+    SH
+    (bin / "sprat").chmod 0755
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/sprat --version")
+  end
+end

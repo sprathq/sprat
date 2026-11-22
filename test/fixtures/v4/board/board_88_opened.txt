@@ -1,0 +1,40 @@
+ SPRAT <•<   ●7 ✓1 ⏸2                                   mon 23 nov  14:02 · pm $2.40/15
+
+ NOW ──────────────────────────────────────────────────────────────────────────────────
+ ⠋ dreamboard · investigating · researching Expo build error: web, fleet histo…  3m 0s
+
+ ON THE RAIL ───────────────────────────────────────────────── 1 of 5 · ←→ · esc fold ─
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ ┃  25M  yours · liftlog-ios · liftlog-ios-77                                         ┃
+ ┃                                                                                    ┃
+ ┃ you        Import the iOS Distribution certificate into the login keychain; B.7    ┃
+ ┃            (App Store archive) is blocked until then.                              ┃
+ ┃                                                                                    ┃
+ ┃ found      L1 error loop: 4× "No signing certificate 'iOS Distribution' found",    ┃
+ ┃            13:18–13:43, no file changed in between                                 ┃
+ ┃ tried      fleet history: same error in liftlog-ios on 2 Oct; you fixed it by      ┃
+ ┃              importing the cert                                                    ┃
+ ┃            web: no way to archive for the store without a distribution identity    ┃
+ ┃              (developer.apple.com, 2 sources)                                      ┃
+ ┃ did        13:44  marked B.7 blocked in .sprat/roadmap.md                 u revert ┃
+ ┃            13:44  told the agent: stop retrying, switch Debug to automatic         ┃
+ ┃                   signing, move on to B.5 onboarding screens                       ┃
+ ┃            14:01  follow-up: agent on B.5, 3 files changed. resolved               ┃
+ ┃                                                                                    ┃
+ ┃ pm run     $0.31 · 11 turns · confidence high                            ⏎ session ┃
+ ┃ x done   c copy note   m mute   u revert   esc fold                                ┃
+ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+ THE LINE ─ dimmed ────────────────────────────────────────────────────────────────────
+ project      roadmap            working on                   agents           sprat is
+ cupful       C 3/9  ▰▰▰▱▱▱▱▱▱▱  shared points ledger         ⏸ ● ● ◌    waiting on you
+ liftlog-ios  B 5/10 ▰▰▰▰▰▱▱▱▱▱  onboarding screens (B.5)     ✓ ●        waiting on you
+ dreamboard   2 2/8  ▰▰▰▱▱▱▱▱▱▱  onboarding copy · stalled    ◌        investigating 3m
+ homescout    4 4/9  ▰▰▰▰▱▱▱▱▱▱  search API · inferred        ◌ ◌          following up
+ liftlog      A 7/10 ▰▰▰▰▰▰▰▱▱▱  merch checkout               ● ●              watching
+ forge        3 2/7  ▰▰▰▱▱▱▱▱▱▱  admin MCP tools              ●                watching
+ tipjar       1 4/5  ▰▰▰▰▰▰▰▰▱▱  payouts · limited                        resumes 15:10
+ studio       no roadmap yet · r propose                      ●                watching
+ fieldnotes   ✓ all phases done
+
+ x done  ⏎ session  ←→ ticket  esc fold  ? help

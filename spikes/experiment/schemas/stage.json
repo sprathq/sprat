@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "artifact_markdown": { "type": "string" },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string" },
+          "title": { "type": "string" },
+          "publisher": { "type": ["string", "null"] },
+          "published": { "type": ["string", "null"] },
+          "supports": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "url", "title", "publisher", "published", "supports"],
+        "additionalProperties": false
+      }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "handoff": { "type": "string" }
+  },
+  "required": ["artifact_markdown", "sources", "assumptions", "handoff"],
+  "additionalProperties": false
+}

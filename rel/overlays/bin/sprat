@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# The command users type: `sprat`, `sprat --continue`, `sprat doctor`.
+#
+# `mix release` generates its own start script named after the release,
+# and copies overlay files in *after* that generation step (same output
+# directory), so a same-named overlay would silently replace it. The
+# release is therefore named `sprat_rt` (see mix.exs `releases/0`),
+# leaving `bin/sprat` free for this wrapper; `bin/sprat_rt` still offers
+# start/stop/eval/remote/pid for anyone who needs them.
+#
+# This execs `sprat_rt start`, the Ctrl+C-safe launch path
+# (docs/phase0/03-terminal-spike.md: `eval`'s code runs over a port with
+# no controlling tty, so `Sprat.Terminal.Mode`'s `stty raw -echo` cannot
+# reach it there; `start`'s direct `erl` exec keeps the real tty
+# throughout), passing argv through `SPRAT_CLI_ARGV` because `start` has
+# no argument that carries args into the booted app the way `eval` does.
+# See `Sprat.Application.start/2` and `Sprat.CLI.run_release/1`.
+set -euo pipefail
+
+# Resolve symlinks before looking for our sibling `sprat_rt`: people put
+# this on their PATH with `ln -s`, and BASH_SOURCE then points at the
+# link, not at the release's bin directory.
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do
+  TARGET="$(readlink "$SELF")"
+  case "$TARGET" in
+    /*) SELF="$TARGET" ;;
+    *) SELF="$(dirname "$SELF")/$TARGET" ;;
+  esac
+done
+DIR="$(cd "$(dirname "$SELF")" && pwd)"
+
+# NUL, not some other separator: it is the one byte a bash string cannot
+# hold at all (bash's internal representation is a NUL-terminated C
+# string) — `$'\0'` here silently evaluates to *nothing*, so multi-arg
+# invocations (`--resume <id>`, `sessions delete <id>`) used to
+# concatenate into one bogus token, e.g. `--resumeses_01J...`, and always
+# fell through to Sprat.CLI's `usage()` catch-all. \x1e (ASCII Record
+# Separator) is not a byte a real argv value is ever expected to contain,
+# and unlike NUL, bash can actually store it.
+argv=""
+for a in "$@"; do
+  argv="${argv}${a}"$'\x1e'
+done
+export SPRAT_CLI_ARGV="$argv"
+
+# Sprat is a local, single-user TUI: it never needs Erlang distribution,
+# and a named node means a second instance (or a stale one) dies with
+# "the name sprat_rt@host seems to be in use by another Erlang node".
+# Belt-and-braces on top of Sprat.Application.start/2's own
+# precheck-and-halt (which is what actually keeps the three expected
+# startup failures — unwritable data dir, newer-than-supported schema,
+# corrupt database — from ever reaching the VM's default crash-dump
+# behavior): 0 seconds means the emulator never waits to write
+# erl_crash.dump for any *other*, truly unexpected panic either, instead
+# of leaving a dump file behind in whatever directory the user happened
+# to launch `sprat` from.
+export ERL_CRASH_DUMP_SECONDS="${ERL_CRASH_DUMP_SECONDS:-0}"
+
+export RELEASE_DISTRIBUTION="${RELEASE_DISTRIBUTION:-none}"
+
+exec "$DIR/sprat_rt" start

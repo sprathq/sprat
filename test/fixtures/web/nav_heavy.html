@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Nav-heavy fixture</title>
+  <style>
+    body { font-family: sans-serif; }
+    .nav a { color: blue; text-decoration: none; }
+  </style>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-000000-1');
+    (function(){ for (var i=0;i<50;i++){ console.log('boilerplate analytics line ' + i); } })();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="brand">Acme Corp</div>
+    <nav class="nav">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/products">Products</a></li>
+        <li><a href="/pricing">Pricing</a></li>
+        <li><a href="/docs">Docs</a></li>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/careers">Careers</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/docs/intro">Introduction</a></li>
+      <li><a href="/docs/install">Installation</a></li>
+      <li><a href="/docs/config">Configuration</a></li>
+      <li><a href="/docs/api">API reference</a></li>
+      <li><a href="/docs/faq">FAQ</a></li>
+    </ul>
+  </nav>
+  <!-- this comment should never appear in the extracted text -->
+  <main>
+    <h1>Getting started</h1>
+    <p>This guide walks through installing the tool and running your first command.</p>
+    <p>See the <a href="https://example.com/reference">reference documentation</a> for details.</p>
+    <ul>
+      <li>Step one: install the package.</li>
+      <li>Step two: configure your API key.</li>
+      <li>Step three: run the command.</li>
+    </ul>
+  </main>
+  <footer>
+    <p>&copy; 2026 Acme Corp. All rights reserved.</p>
+    <ul>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="/terms">Terms</a></li>
+    </ul>
+  </footer>
+  <script src="/assets/app.js"></script>
+  <script>
+    // another chunk of boilerplate that should never reach the model
+    var config = { retries: 3, timeout: 5000, endpoints: ["a","b","c","d","e","f","g","h"] };
+  </script>
+</body>
+</html>

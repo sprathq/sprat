@@ -1,0 +1,22 @@
+20.8	23312046080	149	total	total		
+20.8	23312046080	149	window	window:1	total	
+2.0	703952064	1	process	85368	window:1	cmux
+8.9	10457358144	13	workspace	workspace:56	window:1	Alpha
+8.3	403269504	6	tag	workspace:C03B9F18-2698-48F5-8C4E-BB2DA1374798:tag:claude_code	workspace:56	Running
+8.3	372773120	1	process	65792	workspace:C03B9F18-2698-48F5-8C4E-BB2DA1374798:tag:claude_code	2.1.330
+0.0	3113856	1	process	42844	65792	caffeinate
+8.9	10457358144	13	pane	pane:110	workspace:56	
+0.6	10044617408	6	surface	surface:239	pane:110	✳ Project operations
+0.6	481235840	1	process	48717	surface:239	2.1.330
+0.0	47224000	1	process	52271	48717	node
+0.0	71214784	1	process	52313	52271	node
+0.0	9569792	1	process	23814	surface:239	zsh
+8.3	412740736	7	surface	surface:261	pane:110	◑ Observer work
+8.3	372773120	1	process	65792	surface:261	2.1.330
+0.0	3113856	1	process	42844	65792	caffeinate
+0.0	9471232	1	process	64713	surface:261	zsh
+3.2	3872873600	43	workspace	workspace:8	window:1	Beta
+0.2	727043648	3	tag	workspace:C025208D-3FEA-49E1-9A97-D7F94CB32659:tag:claude_code	workspace:8	Running
+0.2	615405248	1	process	60307	workspace:C025208D-3FEA-49E1-9A97-D7F94CB32659:tag:claude_code	2.1.330
+0.0	57829824	1	process	60768	60307	node
+0.0	282218496	1	process	43987	workspace:C025208D-3FEA-49E1-9A97-D7F94CB32659:tag:codex	codex

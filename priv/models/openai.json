@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "provider": "openai",
+  "effective_date": "2026-09-18",
+  "source": "https://developers.openai.com/api/docs/pricing (fetched 2026-09-18) and GET /v1/models against the owner's account (fetched 2026-09-18)",
+  "notes": "Prices are USD per 1,000,000 tokens. supports_tools/supports_streaming are Sprat's own tested claim, not a provider field. gpt-5.x/o-series models use max_completion_tokens instead of max_tokens (confirmed live 2026-09-18) and price reasoning tokens as output tokens.",
+  "models": [
+    {
+      "id": "gpt-4.1",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 1047576,
+      "price": { "input": "2.00", "cached_input": "0.50", "output": "8.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-4.1-mini",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 1047576,
+      "price": { "input": "0.40", "cached_input": "0.10", "output": "1.60" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-4.1-nano",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 1047576,
+      "price": { "input": "0.10", "cached_input": "0.025", "output": "0.40" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-4o",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 128000,
+      "price": { "input": "2.50", "cached_input": "1.25", "output": "10.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-4o-mini",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 128000,
+      "price": { "input": "0.15", "cached_input": "0.075", "output": "0.60" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-5",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "1.25", "cached_input": "0.125", "output": "10.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models; live call against gpt-5-nano in this family confirmed max_completion_tokens requirement and streaming/tool shape"
+    },
+    {
+      "id": "gpt-5-mini",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "0.25", "cached_input": "0.025", "output": "2.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-5-nano",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "0.05", "cached_input": "0.005", "output": "0.40" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models; live-called for the smoke test on 2026-09-18 (streaming, tool call, usage, cost all confirmed against the real API)"
+    },
+    {
+      "id": "gpt-5.1",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "1.25", "cached_input": "0.125", "output": "10.00" },
+      "verified": "id confirmed present via live GET /v1/models; price inferred from gpt-5 row on the pricing page (gpt-5.1 not broken out separately there) -- treat as unconfirmed, see report"
+    },
+    {
+      "id": "gpt-5.2",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "1.75", "cached_input": "0.175", "output": "14.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-5.4",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "2.50", "cached_input": "0.25", "output": "15.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-5.4-mini",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "0.75", "cached_input": "0.075", "output": "4.50" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-5.4-nano",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 400000,
+      "price": { "input": "0.20", "cached_input": "0.02", "output": "1.25" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models"
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 1047576,
+      "price": { "input": "0.20", "cached_input": "0.02", "output": "1.20" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models -- newest tier, not covered by this developer's own pre-2026 knowledge, single-source price only"
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 1047576,
+      "price": { "input": "2.00", "cached_input": "0.20", "output": "12.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models -- newest tier, single-source price only"
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 1047576,
+      "price": { "input": "4.00", "cached_input": "0.40", "output": "20.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models -- newest tier, single-source price only"
+    },
+    {
+      "id": "gpt-6-astra",
+      "supports_tools": true,
+      "supports_streaming": true,
+      "context_window": 1047576,
+      "price": { "input": "10.00", "cached_input": "1.00", "output": "50.00" },
+      "verified": "priced via developers.openai.com/api/docs/pricing; id confirmed present via live GET /v1/models -- newest flagship, single-source price only"
+    }
+  ],
+  "tools": {
+    "web_search": {
+      "per_call": "0.01",
+      "verified": "OpenAI web search on the Responses API: $10.00 per 1,000 calls (developers.openai.com/api/docs/pricing, fetched 2026-09-18) -- confirmed against a real call in docs/design/web-search-options.md §3.1-3.2/§3.4 (per-search total ~$0.012-0.013 incl. tokens on gpt-5.6-luna); token content from the search itself is billed at the calling model's ordinary input rate, not a separate fee."
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "name": "elixir-phoenix",
+      "label": "Elixir + Phoenix",
+      "stack": "Elixir, Phoenix, Postgres, ExUnit",
+      "run_target": "mix phx.server (local)",
+      "allowed_executables": ["mix", "git", "elixir"],
+      "scaffold": {
+        "executable": "mix",
+        "args": ["phx.new", "{{APP_NAME}}", "--no-install", "--no-ecto"]
+      },
+      "install": { "executable": "mix", "args": ["deps.get"] },
+      "test": { "executable": "mix", "args": ["test"] },
+      "run": { "executable": "mix", "args": ["phx.server"] },
+      "lint": { "executable": "mix", "args": ["format", "--check-formatted"] },
+      "format": { "executable": "mix", "args": ["format"] },
+      "health_check": {
+        "path": "/",
+        "expect_status_min": 200,
+        "expect_status_max": 399,
+        "timeout_ms": 60000,
+        "poll_interval_ms": 500
+      },
+      "layout_conventions": "Standard `mix phx.new` layout: business logic in contexts under lib/<app>/, web-facing code (controllers, LiveViews, components) under lib/<app>_web/. LiveViews live in lib/<app>_web/live. This scaffold is generated with --no-ecto (Phase A proves the app starts; the technical design's data model is wired up when Ecto/Postgres are added by a later implementation stage). config/runtime.exs already reads the PORT env var unconditionally (mix phx.new's own default), which is what the scaffold stage uses to pick a free port — no file patching needed."
+    },
+    {
+      "name": "node-next",
+      "label": "TypeScript + Next.js",
+      "stack": "TypeScript, Next.js, SQLite/Postgres, Vitest",
+      "run_target": "npm run dev (local)",
+      "allowed_executables": ["npm", "npx", "git", "node"],
+      "scaffold": {
+        "executable": "npx",
+        "args": [
+          "create-next-app@latest",
+          "{{APP_NAME}}",
+          "--yes",
+          "--ts",
+          "--eslint",
+          "--app",
+          "--no-tailwind",
+          "--no-src-dir",
+          "--import-alias",
+          "@/*",
+          "--use-npm"
+        ]
+      },
+      "install": { "executable": "npm", "args": ["install"] },
+      "test": { "executable": "npm", "args": ["run", "test"] },
+      "run": { "executable": "npm", "args": ["run", "dev", "--", "-p", "{{PORT}}"] },
+      "lint": { "executable": "npm", "args": ["run", "lint"] },
+      "format": { "executable": "npx", "args": ["prettier", "--write", "."] },
+      "health_check": {
+        "path": "/",
+        "expect_status_min": 200,
+        "expect_status_max": 399,
+        "timeout_ms": 60000,
+        "poll_interval_ms": 500
+      },
+      "layout_conventions": "Standard Next.js App Router layout: routes under app/, components under components/, shared logic under lib/. No src/ directory."
+    }
+  ]
+}

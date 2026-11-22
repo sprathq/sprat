@@ -1,0 +1,40 @@
+ SPRAT <•<  › cupful                                            C · 3/9 · 1.2 items/day
+
+ ON THE RAIL ──────────────────────────────────────────────────────────────────────────
+ ▌ 18M  yours asks: keep network_id? no recorded decision sprat…  f send answer  ⏎ edit
+
+ ROADMAP ─ .sprat/roadmap.md ──────────────────────────────────────────────────────────
+ ✓ A  Loyalty core                                                                 8/8
+ ✓ B  Wallet passes                                                                5/5
+ ▸ C  Cafe networks                                                                3/9
+      ✓ schema + migration
+      ✓ network admin CRUD
+      ✓ member join flow
+      ▸ shared points ledger  cafe-networks-4b ⏸
+      ○ cross-cafe redemption
+      ○ network analytics   …3 more
+ ○ D  TV signage                                                                   0/6
+
+ SESSIONS ─────────────────────────────────────────────────────────────────────────────
+ ⏸ cafe-networks-4b     waiting on you 18m
+ ⠋ tv-venue-leaderboard mix test · working 5m
+ ⠋ cafe-networks-7d     editing network_live.ex · working 5m
+ ◌ Lantern              idle since 11:40
+
+ SERVED ─ last 7 days ─────────────────────────────────────────────────────────────────
+ 12:02  answered "Postgres or SQLite?" from spec-v3 §5
+ yest   pr #212 network admin
+
+ sources  2026-11-14-cafe-networks.md · PAUSE.md · git
+
+
+
+
+
+
+
+
+
+
+
+ ↑↓ move  ⏎ open  f send  A autonomy  e edit roadmap  w write roadmap  ? help

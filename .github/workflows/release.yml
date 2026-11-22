@@ -1,0 +1,89 @@
+name: Release
+
+# Builds self-contained tarballs (Erlang runtime included, no Elixir needed on
+# the user's machine) for every target on a version tag. Publishing to the
+# public sprathq/sprat-releases repo is done by scripts/publish-release.sh,
+# which downloads these artifacts.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: macos-arm64
+            runner: macos-15
+          - target: macos-x86_64
+            runner: macos-15-intel
+          - target: linux-x86_64
+            runner: ubuntu-22.04
+          - target: linux-arm64
+            runner: ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      MIX_ENV: prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Deps
+        run: mix deps.get --only prod
+
+      - name: Release
+        run: mix release --overwrite
+
+      - name: Portability check (no Homebrew / local OpenSSL paths)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rel=_build/prod/rel/sprat_rt
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # `otool -L` also prints a library's own install name (its id),
+            # which can be the path it was built at; skip that, keep deps.
+            libs=$(find "$rel" \( -name '*.so' -o -name 'beam.smp' -o -name '*.dylib' \) | while read -r f; do
+              otool -L "$f" | tail -n +2 | awk '{print $1}' | grep -v "/$(basename "$f")$" || true
+            done | sort -u)
+          else
+            libs=$(find "$rel" \( -name '*.so' -o -name 'beam.smp' \) -exec ldd {} \; 2>/dev/null | awk '{print $3}' | grep / | sort -u)
+          fi
+          echo "$libs"
+          if echo "$libs" | grep -E '^/(opt/homebrew|usr/local|Users|home)/'; then
+            echo "::error::release links a library outside the system paths"; exit 1
+          fi
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          rel=_build/prod/rel/sprat_rt
+          "$rel/bin/sprat_rt" eval 'IO.puts(Base.encode16(:crypto.strong_rand_bytes(4))); {:ok, c} = Exqlite.Sqlite3.open(":memory:"); IO.inspect(c != nil)'
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | "$rel/bin/sprat_rt" eval 'Sprat.PM.MCPServer.main()' | grep -q roadmap_get
+          HOME="$(mktemp -d)" "$rel/bin/sprat" status
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          [[ "$GITHUB_REF_TYPE" == "tag" ]] || version="0.0.0-dev"
+          name="sprat-${version}-${{ matrix.target }}"
+          mkdir -p dist
+          cp -R _build/prod/rel/sprat_rt "dist/$name"
+          tar -C dist -czf "dist/$name.tar.gz" "$name"
+          (cd dist && shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sprat-${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256

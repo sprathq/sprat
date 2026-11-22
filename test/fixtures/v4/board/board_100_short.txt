@@ -1,0 +1,20 @@
+ SPRAT <•<   ● 7 working  ✓ 1 finished  ⏸ 2 need you                mon 23 nov  14:02 · pm $2.40/15
+
+ NOW ──────────────────────────────────────────────────────────────────────────────────────────────
+ ⠋ dreamboard · investigating · researching Expo build error: web, fleet history             3m 0s
+
+ ON THE RAIL ─ what needs attention ──────────────────────────────────── yours first, oldest left ─
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ ┌──────────────────────────────┐ ┌──────────────────────────────┐
+ ┃  25M  yours liftlog-ios      ┃ │  18M  yours cupful           │ │  40M  sprat tipjar           │
+ ┃ import the iOS Distribution  ┃ │ asks: keep network_id?       │ │ usage limit; resumes         │
+ ┃ cert to unblock B.7          ┃ │ no recorded decision         │ │ payouts with the resume      │
+ ┃                              ┃ │ sprat suggests: keep         │ │ prompt when it resets        │
+ ┃ agent moved on to B.5        ┃ │                              │ │                              │
+ ┃ ⏎ details                    ┃ │ f send answer  ⏎ edit        │ │ ⏎ details                    │
+ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ └──────────────────────────────┘ └──────────────────────────────┘
+                                                                                          +2 more →
+
+ THE LINE ─ every project, worst first ────────────────────────────────────────────────────────────
+ cupful       C 3/9  ▰▰▰▱▱▱▱▱▱▱  shared points ledger            ⏸ ● ● ◌    waiting on you      act
+ …8 more ↓
+ ←→ ticket  ↑↓ project  ⏎ open  x dismiss  a activity  space talk  b brief  / command  ? help

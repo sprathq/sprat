@@ -1,0 +1,50 @@
+ SPRAT <•<                                        14:02
+
+ NOW ──────────────────────────────────────────────────
+ ⠋ dreamboard · investigating · researching Ex…  3m 0s
+
+ ON THE RAIL ──────────────────────────── yours first ─
+ ▌ 25M  yours liftlog-ios                             ⏎
+        import the iOS Distribution cert to unblock B.7
+   18M  yours cupful                                  f
+        asks: keep network_id?
+   40M  sprat tipjar                                  ⏎
+        usage limit; resumes payouts with the resume p…
+    9M  sprat homescout                               ⏎
+        following up: told the agent the search API ke…
+    4M  sprat dreamboard                              ⏎
+        researching Expo build error: web, fleet histo…
+
+ THE LINE ─ every project, worst first ────────────────
+ cupful        ⏸ ● ● ◌                              act
+   C 3/9  ▰▰▱▱▱▱  shared points ledger
+ liftlog-ios   ✓ ●                                  act
+   B 5/10 ▰▰▰▱▱▱  onboarding screens (B.5)
+ dreamboard    ◌                                    act
+   2 2/8  ▰▰▱▱▱▱  onboarding copy · stalled
+ homescout     ◌ ◌                              propose
+   4 4/9  ▰▰▰▱▱▱  search API · inferred
+ liftlog       ● ●                                  act
+   A 7/10 ▰▰▰▰▱▱  merch checkout
+ forge         ●                                  watch
+   3 2/7  ▰▰▱▱▱▱  admin MCP tools
+ tipjar                                             act
+   1 4/5  ▰▰▰▰▰▱  payouts · limited · resumes 15:10
+ studio        ●                                propose
+   no roadmap yet · r propose
+ fieldnotes                                         act
+   ✓ all phases done
+
+ SERVED TODAY ─ by sprat unless marked ────────────────
+ 13:44  liftlog-ios reassigned B.7 → B.5 (cert missing…
+ 13:10  liftlog     unblocked: Stripe test clock fix f…
+ 12:02  cupful      answered "Postgres or SQLite?" fro…
+ 11:02  liftlog     ticked A.7 merch cart (commit 4e1c)
+ 10:40  dreamboard  resumed 2.3 from PAUSE.md (you)
+
+
+
+
+
+
+ ←→ ↑↓ move  ⏎ open  x dismiss  ? help

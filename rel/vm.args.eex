@@ -1,0 +1,30 @@
+## Customize flags given to the VM: https://www.erlang.org/doc/man/erl.html
+## -mode/-name/-sname/-setcookie are configured via env vars, do not set them here
+
+## Defense-in-depth for Ctrl+C, not the fix itself (that was
+## `Sprat.Terminal.Mode`'s `stty raw -echo` failing to reach the real tty
+## — see that module's moduledoc for the actual root cause and how it's
+## fixed). With `stty raw -echo` genuinely clearing ISIG, the kernel never
+## turns Ctrl+C into a real SIGINT in the first place, so `erl`'s own
+## break handler never triggers regardless of this flag — confirmed via a
+## real tmux capture with `vm.args` empty (no BREAK menu, Ctrl+C reaches
+## `Sprat.Terminal.Keybindings` normally). `+Bi` ("ignore break") is kept
+## anyway as a backstop: if ISIG ever fails to clear for some other reason
+## (the exact failure mode this bug started as), a real SIGINT still
+## reaches `erl`, and without this flag `erl` defaults to `+Bc` — the
+## original bug's "BREAK: (a)bort ..." menu, then VM death on a second
+## Ctrl+C. `+Bi` degrades that same failure to merely-inert instead of
+## destructive. `+Bd` (docs/phase0/03-terminal-spike.md) was tried first
+## and is worse here: no menu, but it kills the VM outright on the first
+## Ctrl+C rather than asking.
++Bi
+
+## Increase number of concurrent ports/sockets
+##+Q 65536
+
+## Tweak GC to run more often
+##-env ERL_FULLSWEEP_AFTER 10
+
+## Enable deployment without epmd
+## (requires changing both vm.args and remote.vm.args)
+##-start_epmd false -erl_epmd_port 6789

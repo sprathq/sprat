@@ -1,0 +1,37 @@
+# The directory Mix will write compiled artifacts to.
+/_build/
+
+# If you run "mix test --cover", coverage assets end up here.
+/cover/
+
+# The directory Mix downloads your dependencies sources to.
+/deps/
+
+# Where third-party dependencies like ExDoc output generated docs.
+/doc/
+
+# Temporary files, for example, from tests.
+/tmp/
+
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+# Ignore package tarball (built via "mix hex.build").
+sprat-*.tar
+
+
+# Nested build artifacts from spike projects
+**/_build/
+**/deps/
+**/cover/
+spikes/terminal/sprat_terminal_spike
+
+# Experiment run outputs (large; fetched page snapshots). Findings live in docs/phase0/.
+spikes/experiment/runs/
+.env
+# git worktrees used for isolated agent work
+/.worktrees/
+.claude/worktrees/

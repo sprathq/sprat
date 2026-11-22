@@ -1,0 +1,40 @@
+ SPRAT <•<   ● 7 working  ✓ 1 finished  ⏸ 2 need you                                    mon 23 nov  14:02 · pm $2.40/15
+
+ NOW ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ⠋ dreamboard · investigating · researching Expo build error: web, fleet history                                 3m 0s
+
+ ON THE RAIL ─ what needs attention ──────────────────────────────────────────────────────── yours first, oldest left ─
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓ ┌──────────────────────────┐ ┌──────────────────────────┐ ┌──────────────────────────┐
+ ┃  25M  yours liftlog-ios  ┃ │  18M  yours cupful       │ │  40M  sprat tipjar       │ │   9M  sprat homescout    │
+ ┃ import the iOS           ┃ │ asks: keep network_id?   │ │ usage limit; resumes     │ │ following up: told the   │
+ ┃ Distribution cert to     ┃ │ no recorded decision     │ │ payouts with the resume  │ │ agent the search API     │
+ ┃ unblock B.7              ┃ │ sprat suggests: keep     │ │ prompt when it resets    │ │ key is in .env.local     │
+ ┃ agent moved on to B.5    ┃ │                          │ │                          │ │                          │
+ ┃ ⏎ details                ┃ │ f send answer  ⏎ edit    │ │ ⏎ details                │ │ ⏎ watch                  │
+ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛ └──────────────────────────┘ └──────────────────────────┘ └──────────────────────────┘
+                                                                                                              +1 more →
+
+ THE LINE ─ every project, worst first ────────────────────────────────────────────────────────────────────────────────
+ project      roadmap            working on                                 agents           sprat is autonomy    moved
+ cupful       C 3/9  ▰▰▰▱▱▱▱▱▱▱  shared points ledger                       ⏸ ● ● ◌    waiting on you      act    13:12
+ liftlog-ios  B 5/10 ▰▰▰▰▰▱▱▱▱▱  onboarding screens (B.5)                   ✓ ●        waiting on you      act    11:42
+ dreamboard   2 2/8  ▰▰▰▱▱▱▱▱▱▱  onboarding copy · stalled                  ◌        investigating 3m      act   2d ago
+ homescout    4 4/9  ▰▰▰▰▱▱▱▱▱▱  search API · inferred                      ◌ ◌          following up  propose     yest
+ liftlog      A 7/10 ▰▰▰▰▰▰▰▱▱▱  merch checkout                             ● ●              watching      act    11:02
+ forge        3 2/7  ▰▰▰▱▱▱▱▱▱▱  admin MCP tools                            ●                watching    watch    09:02
+ tipjar       1 4/5  ▰▰▰▰▰▰▰▰▱▱  payouts · limited                                      resumes 15:10      act    07:22
+ studio       no roadmap yet · r propose                                    ●                watching  propose
+ fieldnotes   ✓ all phases done                                                                            act   9d ago
+
+ SERVED TODAY ─ by sprat unless marked ────────────────────────────────────────────────────────────────────────────────
+ 13:44  liftlog-ios   reassigned B.7 → B.5 (cert missing), yours: import cert
+ 13:10  liftlog       unblocked: Stripe test clock fix from tipjar, 2 Oct
+ 12:02  cupful        answered "Postgres or SQLite?" from spec-v3 §5
+ 11:02  liftlog       ticked A.7 merch cart (commit 4e1c)
+ 10:40  dreamboard    resumed 2.3 from PAUSE.md (you)
+
+
+
+
+
+ ←→ ticket  ↑↓ project  ⏎ open  x dismiss  a activity  space talk  b brief  / command  ? help

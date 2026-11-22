@@ -1,0 +1,40 @@
+ SPRAT <o<   * 7 working  v 1 finished  || 2 need you               mon 23 nov  14:02 . pm $2.40/15
+
+ NOW ----------------------------------------------------------------------------------------------
+ | dreamboard . investigating . researching Expo build error: web, fleet history             3m 0s
+
+ ON THE RAIL - what needs attention ------------------------------------ yours first, oldest left -
+ +==============================+ +------------------------------+ +------------------------------+
+ |  25M  yours liftlog-ios      | |  18M  yours cupful           | |  40M  sprat tipjar           |
+ | import the iOS Distribution  | | asks: keep network_id?       | | usage limit; resumes         |
+ | cert to unblock B.7          | | no recorded decision         | | payouts with the resume      |
+ |                              | | sprat suggests: keep         | | prompt when it resets        |
+ | agent moved on to B.5        | |                              | |                              |
+ | enter details                | | f send answer  enter edit    | | enter details                |
+ +==============================+ +------------------------------+ +------------------------------+
+                                                                                         +2 more ->
+
+ THE LINE - every project, worst first ------------------------------------------------------------
+ project      roadmap            working on                      agents           sprat is autonomy
+ cupful       C 3/9  ###.......  shared points ledger            || * * o   waiting on you      act
+ liftlog-ios  B 5/10 #####.....  onboarding screens (B.5)        v *        waiting on you      act
+ dreamboard   2 2/8  ###.......  onboarding copy . stalled       o        investigating 3m      act
+ homescout    4 4/9  ####......  search API . inferred           o o          following up  propose
+ liftlog      A 7/10 #######...  merch checkout                  * *              watching      act
+ forge        3 2/7  ###.......  admin MCP tools                 *                watching    watch
+ tipjar       1 4/5  ########..  payouts . limited                           resumes 15:10      act
+ studio       no roadmap yet . r propose                         *                watching  propose
+ fieldnotes   v all phases done                                                                 act
+
+ SERVED TODAY - by sprat unless marked ------------------------------------------------------------
+ 13:44  liftlog-ios   reassigned B.7 -> B.5 (cert missing), yours: import cert
+ 13:10  liftlog       unblocked: Stripe test clock fix from tipjar, 2 Oct
+ 12:02  cupful        answered "Postgres or SQLite?" from spec-v3 §5
+ 11:02  liftlog       ticked A.7 merch cart (commit 4e1c)
+ 10:40  dreamboard    resumed 2.3 from PAUSE.md (you)
+
+
+
+
+
+ h/l ticket  j/k project  enter open  x dismiss  a activity  space talk  b brief  ? help
