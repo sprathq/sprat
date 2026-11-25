@@ -16,7 +16,7 @@ defmodule Sprat.Terminal.Board do
 
   alias Sprat.Observer.Model.{Project, Session, Ticket}
   alias Sprat.Terminal.{Composer, Mascot}
-  alias Sprat.Terminal.Board.{Help, Style, Tank, View}
+  alias Sprat.Terminal.Board.{Help, Keys, Style, Tank, View}
 
   import Sprat.Terminal.Board.Style, only: [sp: 1]
 
@@ -418,10 +418,8 @@ defmodule Sprat.Terminal.Board do
 
     left =
       [{"    ", :text}, {g <> " ", gs}, {Style.fit(session_label(s), label_w, ctx), :text}, sp(1)] ++
-        [
-          {Style.fit(story_detail(view, s, state, offset), detail_w, ctx), detail_style(state)},
-          sp(2)
-        ] ++
+        Style.fit_segs(story_detail_segs(view, s, state, offset), detail_w, ctx) ++
+        [sp(2)] ++
         did_segs(node, "read", ctx)
 
     # No meter: a watcher reads every two seconds, so its work is a
@@ -433,8 +431,16 @@ defmodule Sprat.Terminal.Board do
   end
 
   # The session's state, without its title (the label says which it is).
-  defp story_detail(view, s, :busy, _offset), do: working_for(view.snapshot.now, s)
+  defp story_detail(view, s, :busy, _offset),
+    do: working_for(view.snapshot.now, s, quiet(view, s))
+
   defp story_detail(view, s, state, offset), do: session_detail(view, s, state, offset)
+
+  defp story_detail_segs(view, s, state, offset) when state in [:idle, :finished],
+    do: session_detail_segs(view, s, state, offset, detail_style(state))
+
+  defp story_detail_segs(view, s, state, offset),
+    do: [{story_detail(view, s, state, offset), detail_style(state)}]
 
   # The last thing a process did and how long ago: bright while new, then
   # quiet, then "resting" once it is a minute old.
@@ -2374,6 +2380,9 @@ defmodule Sprat.Terminal.Board do
 
     rows
     |> Enum.map(fn segs -> if dim?, do: dim(segs), else: segs end)
+    |> Enum.map(fn segs ->
+      if selected? and not dim?, do: Style.highlight(segs, ctx.width - 1, ctx), else: segs
+    end)
     |> Enum.map(&Style.line(&1, ctx))
   end
 
@@ -2809,17 +2818,19 @@ defmodule Sprat.Terminal.Board do
         marker = if sel?, do: {"›", :bright}, else: {" ", :text}
         {g, gs} = if state == :busy, do: spinner(ctx), else: glyph_seg(state)
 
-        Style.line(
+        segs =
           Style.fit_segs(
             [
               marker,
               {g <> " ", gs},
-              {Style.fit(session_label(s), 21, cctx), if(sel?, do: :bright, else: :text)},
-              {session_detail(view, s, state, offset), :quiet}
-            ],
+              {Style.fit(session_label(s), 21, cctx), if(sel?, do: :bright, else: :text)}
+            ] ++ session_detail_segs(view, s, state, offset, :quiet),
             width,
             cctx
-          ),
+          )
+
+        Style.line(
+          if(sel?, do: Style.highlight(segs, width, cctx), else: segs),
           cctx
         )
       end)
@@ -2835,8 +2846,11 @@ defmodule Sprat.Terminal.Board do
 
   defp session_label(%Session{} = s), do: s.name || s.branch || String.slice(s.session_id, 0, 8)
 
-  defp session_detail(view, %Session{} = s, state, offset) do
+  # `explain?`: whether a quiet session's line carries why, what next and what
+  # it last did (the session screen shows those on lines of their own).
+  defp session_detail(view, %Session{} = s, state, offset, explain? \\ true) do
     now = view.snapshot.now
+    quiet_detail = if explain?, do: &quiet_detail/4, else: fn _v, _s, short, _o -> short end
 
     case state do
       :waiting ->
@@ -2848,13 +2862,26 @@ defmodule Sprat.Terminal.Board do
         "stuck · " <> first_line(t && t.headline)
 
       :busy ->
-        if(s.title, do: s.title <> " · ", else: "") <> working_for(now, s)
+        explained = quiet(view, s)
+
+        # A running command says more than the title it replaces.
+        title =
+          if s.title && not match?(%{reason: {:running, _, _}}, explained),
+            do: s.title <> " · ",
+            else: ""
+
+        title <> working_for(now, s, explained)
 
       :finished ->
-        "finished its turn " <> ago(now, s.status_since)
+        quiet_detail.(view, s, "finished its turn " <> ago(now, s.status_since), offset)
 
       :idle ->
-        "idle since " <> hhmm(s.status_since || s.last_activity_at, offset)
+        quiet_detail.(
+          view,
+          s,
+          "idle since " <> hhmm(s.status_since || s.last_activity_at, offset),
+          offset
+        )
 
       :ended ->
         "ended " <> hhmm(s.last_activity_at, offset)
@@ -2866,7 +2893,7 @@ defmodule Sprat.Terminal.Board do
   # How long the agent has worked on this turn and, when it has written
   # nothing for a while, how long it has been quiet (a long test run, or
   # hung): the in-progress clock for one agent.
-  defp working_for(now, %Session{} = s) do
+  defp working_for(now, %Session{} = s, explained) do
     turn = s.status_since || s.started_at
     last = s.last_activity_at
 
@@ -2874,10 +2901,117 @@ defmodule Sprat.Terminal.Board do
 
     quiet = if last, do: DateTime.diff(now, last), else: 0
 
-    if quiet >= @quiet_after_s,
-      do: worked <> " · quiet " <> short_duration(quiet),
-      else: worked
+    cond do
+      quiet < @quiet_after_s ->
+        worked
+
+      # Quiet because a command is still running (a long test run): say so,
+      # rather than leave it looking hung.
+      match?(%{reason: {:running, _, _}}, explained) ->
+        {:running, label, since} = explained.reason
+        for_ = if since, do: " for " <> short_duration(DateTime.diff(now, since)), else: ""
+        worked <> " · running" <> for_ <> ": " <> label
+
+      true ->
+        worked <> " · quiet " <> short_duration(quiet)
+    end
   end
+
+  # What `Sprat.Engine.Quiet` says about a session that is not working, or nil
+  # (an old daemon's snapshot carries none).
+  defp quiet(view, %Session{session_id: sid}),
+    do: view.snapshot |> Map.get(:quiet, %{}) |> Map.get(sid)
+
+  # A quiet session's line: why it is quiet (in place of `fallback` when
+  # nothing more is known than idle), what it last did, what Sprat will do.
+  defp quiet_detail(view, s, fallback, offset) do
+    case quiet_parts(view, s, fallback, offset) do
+      nil -> fallback
+      {why, nil, _reason} -> why
+      {why, rest, _reason} -> why <> " · " <> rest
+    end
+  end
+
+  # The same line split into why (its own colour, so it reads apart from the
+  # plan and the last action) and the rest, or nil when nothing is known.
+  defp quiet_parts(view, s, fallback, offset) do
+    case quiet(view, s) do
+      nil ->
+        nil
+
+      q ->
+        now = view.snapshot.now
+        fmt = &hhmm(&1, offset)
+
+        why =
+          case q.reason do
+            :turn_done -> fallback
+            _ -> Sprat.Engine.Quiet.why_text(q, fmt)
+          end
+
+        # The plan before the last action: when the row is cut, what Sprat
+        # will do is the part that says whether it needs you.
+        rest =
+          [Sprat.Engine.Quiet.plan_text(q, now, fmt), Sprat.Engine.Quiet.last_text(q, now)]
+          |> Enum.reject(&is_nil/1)
+          |> case do
+            [] -> nil
+            parts -> Enum.join(parts, " · ")
+          end
+
+        {why, rest, q.reason}
+    end
+  end
+
+  # A session's detail as segments in `base`, with a quiet session's why in
+  # a colour of its own.
+  defp session_detail_segs(view, %Session{} = s, state, offset, base)
+       when state in [:idle, :finished] do
+    now = view.snapshot.now
+
+    fallback =
+      if state == :finished,
+        do: "finished its turn " <> ago(now, s.status_since),
+        else: "idle since " <> hhmm(s.status_since || s.last_activity_at, offset)
+
+    case quiet_parts(view, s, fallback, offset) do
+      nil -> [{fallback, base}]
+      {why, nil, reason} -> [{why, why_style(reason)}]
+      {why, rest, reason} -> [{why, why_style(reason)}, {" · " <> rest, base}]
+    end
+  end
+
+  defp session_detail_segs(view, s, state, offset, base),
+    do: [{session_detail(view, s, state, offset), base}]
+
+  # The session screen's two lines under the header for a session that is
+  # not working: why, what it last did, and what Sprat will do next.
+  defp quiet_rows(view, s, state, ctx) do
+    q = quiet(view, s)
+
+    if q && state in [:idle, :finished, :waiting] do
+      offset = Map.get(view.snapshot, :utc_offset, 0)
+      now = view.snapshot.now
+      fmt = &hhmm(&1, offset)
+      last = Sprat.Engine.Quiet.last_text(q, now)
+      plan = Sprat.Engine.Quiet.plan_text(q, now, fmt)
+
+      why =
+        [{" why   ", :quiet}, {Sprat.Engine.Quiet.why_text(q, fmt), why_style(q.reason)}] ++
+          if(last, do: [{" · last: " <> last, :quiet}], else: [])
+
+      next = if plan, do: [[{" next  ", :quiet}, {plan, :text}]], else: []
+
+      Enum.map([why | next], &Style.line(Style.fit_segs(&1, rule_w(ctx), ctx), ctx))
+    else
+      []
+    end
+  end
+
+  defp why_style({:limit, _}), do: :stuck
+  defp why_style({:question, _}), do: :you
+  defp why_style({:permission, _}), do: :you
+  defp why_style(_), do: :text
 
   defp short_duration(s) when s < 60, do: "#{max(s, 0)}s"
   defp short_duration(s) when s < 3600, do: "#{div(s, 60)}m"
@@ -2896,49 +3030,207 @@ defmodule Sprat.Terminal.Board do
         ctx,
         [project_label(p), session_label(s)],
         if(state == :busy, do: [spinner(ctx), sp(1)], else: []) ++
-          [{session_detail(view, s, state, offset), detail_style(state)}, sp(1)]
+          [{session_detail(view, s, state, offset, false), detail_style(state)}, sp(1)]
       )
 
     surface = mirror_surface(s)
     terminal? = View.mirroring?(view, sid)
     input = session_input(view, sid, s, ctx)
-    budget = max(avail - 3 - length(input), 1)
+    why = quiet_rows(view, s, state, ctx)
+    budget = max(avail - 3 - length(input) - length(why), 1)
 
     {rule, rows} =
-      if terminal? do
-        # The session's own screen, framed as Claude's window: one row more,
-        # since the frame's title replaces the band rule.
-        {nil, claude_frame(View.session_screen(view, sid), s, surface, budget + 2, ctx)}
-      else
-        right = if surface, do: "⏎ expand · tab terminal", else: "⏎ expand"
-        label = if surface, do: "condensed", else: "condensed · no cmux tab to mirror"
+      cond do
+        view.session_mode == :recap ->
+          recap_band(view, sid, surface, budget, offset, ctx)
 
-        rows =
-          case View.session_lines(view, sid) do
-            [] ->
-              [Style.line([{" no transcript lines yet", :quiet}], ctx)]
+        terminal? ->
+          # The session's own screen, framed as Claude's window: one row more,
+          # since the frame's title replaces the band rule.
+          {nil,
+           claude_frame(
+             View.session_screen(view, sid),
+             s,
+             surface,
+             budget + 2,
+             view.mirror_scroll,
+             ctx
+           )}
 
-            lines ->
-              lines
-              |> Enum.with_index()
-              |> Enum.map(fn {l, i} -> transcript_rows(l, i, view, offset, ctx) end)
-              |> window(view.session_index, budget, ctx)
-          end
+        true ->
+          right = "⏎ expand · tab recap"
+          label = if surface, do: "condensed", else: "condensed · no cmux tab to mirror"
 
-        {Style.rule("TRANSCRIPT", ctx, label: label, right: right, width: rule_w(ctx)), rows}
+          rows =
+            case View.session_lines(view, sid) do
+              [] ->
+                [Style.line([{" no transcript lines yet", :quiet}], ctx)]
+
+              lines ->
+                lines
+                |> Enum.with_index()
+                |> Enum.map(fn {l, i} -> transcript_rows(l, i, view, offset, ctx) end)
+                |> window(view.session_index, budget, ctx)
+            end
+
+          {Style.rule("TRANSCRIPT", ctx, label: label, right: right, width: rule_w(ctx)), rows}
       end
 
     # The message line sits at the bottom, under the session's screen, the
     # way a terminal's prompt does.
     if rule do
       rows = Enum.take(rows, budget)
-      [header, "", rule] ++ rows ++ List.duplicate("", budget - length(rows)) ++ input
+      [header | why] ++ ["", rule] ++ rows ++ List.duplicate("", budget - length(rows)) ++ input
     else
       # The frame's bottom edge already separates the session from the
       # message line; no second rule.
-      [header, ""] ++ rows ++ tl(input)
+      [header | why] ++ [""] ++ rows ++ tl(input)
     end
   end
+
+  # == what a session did ======================================================
+  #
+  # Read from its transcript (and its subagents'), not from a model: who
+  # asked what, where each turn ended, the repositories it worked in, its
+  # commits, failed test runs and stops. Newest at the bottom.
+
+  defp recap_band(view, sid, surface, budget, offset, ctx) do
+    hours = view.recap_hours
+
+    spans =
+      Enum.map_join(Keys.recap_hours(), " ", &if(&1 == hours, do: "[#{&1}h]", else: "#{&1}h"))
+
+    next = if surface, do: "tab terminal", else: "tab transcript"
+
+    rule =
+      Style.rule("RECAP", ctx,
+        label: "last #{hours}h",
+        right: "←→ #{spans} · #{next}",
+        width: rule_w(ctx)
+      )
+
+    rows =
+      case View.recap(view, sid) do
+        nil ->
+          [Style.line([{" reading its transcript" <> Style.ellipsis(ctx), :quiet}], ctx)]
+
+        r ->
+          head = recap_head(r, offset, ctx)
+
+          timeline_rows(r.timeline, view.recap_scroll, max(budget - length(head), 1), offset, ctx)
+          |> then(&(head ++ &1))
+      end
+
+    {rule, rows}
+  end
+
+  defp recap_head(r, offset, ctx) do
+    c = r.counts
+
+    tests =
+      cond do
+        c.tests == 0 -> nil
+        c.failed > 0 -> "#{c.tests} test runs, #{c.failed} failed"
+        true -> "#{c.tests} test runs"
+      end
+
+    facts =
+      [
+        c.you > 0 && plural(c.you, "prompt") <> " from you",
+        c.sprat > 0 && "#{c.sprat} from sprat",
+        c.turns > 0 && plural(c.turns, "turn"),
+        c.edits > 0 && plural(c.edits, "edit"),
+        c.commits > 0 && plural(c.commits, "commit"),
+        tests,
+        c.limits > 0 && plural(c.limits, "usage limit")
+      ]
+      |> Enum.filter(&is_binary/1)
+
+    first =
+      case facts do
+        [] ->
+          [Style.line([{" nothing in these hours", :quiet}], ctx)]
+
+        _ ->
+          facts
+          |> Enum.join(" · ")
+          |> Style.wrap(ctx.width - 2, ctx)
+          |> Enum.map(&Style.line([{" " <> &1, :text}], ctx))
+      end
+
+    repos =
+      case r.repos do
+        [] ->
+          []
+
+        list ->
+          [
+            Style.line(
+              Style.fit_segs(
+                [{" worked in  ", :quiet}] ++
+                  (list
+                   |> Enum.map(fn {name, n} -> [{name, :bright}, {" #{n}", :quiet}] end)
+                   |> Enum.intersperse([{" · ", :quiet}])
+                   |> List.flatten()),
+                ctx.width - 1,
+                ctx
+              ),
+              ctx
+            )
+          ]
+      end
+
+    cut =
+      if r.cut? and r.from,
+        do: [
+          Style.line([{" read from #{hhmm(r.from, offset)}; older was not read", :quiet}], ctx)
+        ],
+        else: []
+
+    first ++ repos ++ cut ++ [""]
+  end
+
+  defp timeline_rows([], _scroll, _budget, _offset, ctx),
+    do: [Style.line([{" no prompts, turns or commits in these hours", :quiet}], ctx)]
+
+  defp timeline_rows(entries, scroll, budget, offset, ctx) do
+    shown = Enum.drop(entries, -min(scroll, max(length(entries) - 1, 0)))
+    above = max(length(shown) - budget, 0)
+    room = if above > 0, do: budget - 1, else: budget
+    above = max(length(shown) - room, 0)
+
+    more =
+      if above > 0,
+        do: [Style.line([{" …#{above} earlier ↑", :quiet}], ctx)],
+        else: []
+
+    more ++
+      Enum.map(Enum.take(shown, -room), fn e ->
+        {word, style} = recap_word(e.kind)
+        time = if e.at, do: hhmm(e.at, offset), else: "     "
+
+        Style.line(
+          Style.fit_segs(
+            [
+              {" " <> time <> "  ", :quiet},
+              {String.pad_trailing(word, 8), :quiet},
+              {e.text, style}
+            ],
+            ctx.width - 1,
+            ctx
+          ),
+          ctx
+        )
+      end)
+  end
+
+  defp recap_word(:you), do: {"you", :bright}
+  defp recap_word(:sprat), do: {"sprat", :text}
+  defp recap_word(:said), do: {"agent", :text}
+  defp recap_word(:commit), do: {"commit", :progress}
+  defp recap_word(:failed), do: {"failed", :stuck}
+  defp recap_word(:stop), do: {"stopped", :stuck}
+  defp recap_word(_), do: {"", :text}
 
   defp mirror_surface(%{surface: "surface:" <> _ = surface}), do: surface
   defp mirror_surface(_), do: nil
@@ -2951,7 +3243,7 @@ defmodule Sprat.Terminal.Board do
   # the markers Claude Code puts on each kind of line (⏺ ⎿ ❯ ✻, diff
   # numbers); a line without a known marker stays plain text.
 
-  defp claude_frame(text, s, surface, rows, ctx) do
+  defp claude_frame(text, s, surface, rows, scroll, ctx) do
     # One space of margin, like every band on the board.
     w = rule_w(ctx) - 1
     inner_w = w - 4
@@ -2963,12 +3255,11 @@ defmodule Sprat.Terminal.Board do
           [[{"reading the session's terminal" <> Style.ellipsis(ctx), :quiet}]]
 
         text ->
-          text
-          |> String.split("\n")
-          |> Enum.map(&String.trim_trailing/1)
-          |> Enum.reverse()
-          |> Enum.drop_while(&(&1 == ""))
-          |> Enum.reverse()
+          all = View.mirror_lines(text)
+          # Scrolled up: hide the newest `scroll` lines, keeping a page.
+          shown = Enum.drop(all, -min(scroll, max(length(all) - inner_h, 0)))
+
+          shown
           |> Enum.take(-inner_h)
           |> Enum.map(&full_rule(&1, inner_w))
           |> Enum.map(&claude_line/1)
@@ -2985,7 +3276,7 @@ defmodule Sprat.Terminal.Board do
         )
       end)
 
-    [claude_top(s, surface, w, ctx) | body] ++
+    [claude_top(s, surface, scroll, w, ctx) | body] ++
       [Style.line([{" ╰" <> String.duplicate("─", max(w - 2, 0)) <> "╯", :claude}], ctx)]
   end
 
@@ -2998,9 +3289,14 @@ defmodule Sprat.Terminal.Board do
       else: line
   end
 
-  defp claude_top(s, surface, w, ctx) do
+  defp claude_top(s, surface, scroll, w, ctx) do
     title = " Claude Code · #{s.name || String.slice(s.session_id, 0, 8)} · #{account_label(s)} "
-    right = " live · #{surface} "
+
+    right =
+      if scroll > 0,
+        do: " ↑ #{scroll} lines up · ↓ back to live ",
+        else: " live · #{surface} "
+
     fill = w - 2 - 1 - Style.w(title, ctx) - Style.w(right, ctx) - 1
 
     segs =
@@ -3539,17 +3835,27 @@ defmodule Sprat.Terminal.Board do
       View.mirroring?(view, sid) ->
         [
           {"type", "message"},
+          {"↑↓", "scroll"},
           {"space", "talk"},
           {"tab", "transcript"},
           {"^o", "its tab"},
           {"esc", "back"}
         ]
 
-      true ->
+      view.session_mode == :recap ->
         tab =
           case View.session(view, sid) do
             {%{surface: "surface:" <> _}, _} -> [{"tab", "terminal"}, {"^o", "its tab"}]
-            _ -> []
+            _ -> [{"tab", "transcript"}]
+          end
+
+        [{"type", "message"}, {"↑↓", "scroll"}, {"←→", "hours"}] ++ tab ++ [{"esc", "back"}]
+
+      true ->
+        tab =
+          case View.session(view, sid) do
+            {%{surface: "surface:" <> _}, _} -> [{"tab", "recap"}, {"^o", "its tab"}]
+            _ -> [{"tab", "recap"}]
           end
 
         [{"type", "message"}, {"↑↓", "scroll"}, {"⏎", "expand"}] ++ tab ++ [{"esc", "back"}]

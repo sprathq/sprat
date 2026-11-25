@@ -208,9 +208,12 @@ defmodule Sprat.Terminal.Board.Help do
               "an item is the agent working on it."},
            {[{:glyphs, [:busy, :finished, :idle, :waiting]}],
             "Sessions: each Claude session in this project, what it's doing and how " <>
-              "long it has worked on this turn. \"quiet 6m\" means it has written " <>
-              "nothing for six minutes: a long test run, or hung. ⏎ on one opens it, " <>
-              "and you can talk to it from there."},
+              "long it has worked on this turn. \"running for 9m: mix test\" is a command " <>
+              "still going; \"quiet 6m\" means it has written nothing for six minutes " <>
+              "with nothing running, so it may be hung. A session that isn't working " <>
+              "says why (a usage limit, a question for you, a finished turn), what " <>
+              "Sprat will do next, and what it last did. ⏎ on one opens it, and you " <>
+              "can talk to it from there."},
            {[{"SERVED", :quiet}], "What got done here in the last seven days."},
            {[{"sources", :quiet}],
             "The files the roadmap was read from: plans, ROADMAP.md, the spec, git. " <>
@@ -259,7 +262,15 @@ defmodule Sprat.Terminal.Board.Help do
             "The agent is asking something (allow a command, pick an option). Answer " <>
               "it here: 1–9 picks, ↑↓ moves, ⏎ confirms."},
            {[{"idle since 16:41", :quiet}],
-            "Top right: what the session is doing, and since when."}
+            "Top right: what the session is doing, and since when."},
+           {[{"why", :quiet}],
+            "When it isn't working, why: a usage limit, a question for you, a " <>
+              "command waiting for your ok, or simply a finished turn. Then the last " <>
+              "thing it did, and how long ago."},
+           {[{"next", :quiet}],
+            "What Sprat will do about it, and when: continue it at the limit's " <>
+              "reset, leave it for you, or look in once it has been idle 30 minutes " <>
+              "(and then propose or nudge, as the project's autonomy allows)."}
          ]}
       ],
       keys: [
@@ -269,8 +280,10 @@ defmodule Sprat.Terminal.Board.Help do
         {"⏎", "send it (in the transcript: expand a line)"},
         {"esc", "drop the message, or go back"},
         {"1–9 ↑↓ ⏎", "answer a question the agent is asking"},
-        {"tab", "its terminal ↔ its condensed transcript"},
-        {"↑↓", "scroll the transcript"},
+        {"tab",
+         "its terminal → its condensed transcript → its recap: what it did over the last hours (←→ 1h 4h 12h 24h)"},
+        {"↑↓ pgup pgdn",
+         "scroll its terminal back through its history, or the transcript; ↓ to the bottom follows it live again"},
         {"ctrl-o", "switch to the session's own cmux tab"}
       ]
     }

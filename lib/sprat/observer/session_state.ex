@@ -35,8 +35,20 @@ defmodule Sprat.Observer.SessionState do
     s = if e.at, do: %{s | last_event_at: e.at}, else: s
     s = %{s | last_event_line: e.line}
     s = track_assistant_line(e, s)
+    s = track_action(e, s)
     apply_event(e, s)
   end
+
+  # The main thread's newest action, for "last: ran mix test 12m ago". A
+  # tool result is the end of an action, not one.
+  defp track_action(%Event{sidechain?: false, at: %DateTime{} = at} = e, s) do
+    case Sprat.Engine.Beats.kind(e) do
+      {kind, label} when kind not in [:done] -> %{s | last_action: {at, kind, label}}
+      _ -> s
+    end
+  end
+
+  defp track_action(_e, s), do: s
 
   # Evidence ids for the detector: the newest assistant-side line, and the
   # last 10 assistant-side lines (W3's window counts api errors among them).

@@ -2,6 +2,10 @@
 
 The product manager for every Claude Code agent on your machine.
 
+[Website](https://sprat.dev) · [Docs](https://sprat.dev/docs) · [Install](#install) · [MIT licence](LICENSE)
+
+![The Sprat board: every project, what needs you, what Sprat is doing](https://sprat.dev/images/screens/board.webp)
+
 Sprat watches every Claude Code session you run, knows where each project stands on its
 roadmap, notices when an agent or a project stops moving, and gets it moving again itself:
 it checks the roadmap and the decisions already written down, searches your memory and how
@@ -10,22 +14,53 @@ the agent, answers its question from what was decided, or hands it the next unbl
 It continues sessions when a usage limit resets. Only what is genuinely yours (credentials,
 money, scope, irreversible actions, judgement calls nobody wrote down) reaches you.
 
-Status: **V4 built** (spec: [docs/spec-v4.md](docs/spec-v4.md)). Local, single user, macOS.
+Local and single user, on macOS and Linux. Nothing you work on is sent to sprat.dev.
+
+## Install
+
+```sh
+curl -fsSL https://sprat.dev/install.sh | sh     # into ~/.local/lib/sprat, linked as ~/.local/bin/sprat
+brew install sprathq/tap/sprat                   # or with Homebrew
+```
+
+Every build bundles its own Erlang runtime; you do not need Elixir. Sprat needs
+[Claude Code](https://code.claude.com/docs/en/overview) (its investigations run
+`claude -p` on your account), and [cmux](https://cmux.com) or tmux to type into live
+sessions (without either it falls back to the clipboard).
+
+Then:
+
+```sh
+sprat install-agent   # macOS: start `sprat serve` at login (a launchd agent)
+sprat                 # open the board
+```
+
+On Linux, run `sprat serve` yourself (a systemd user service, or a spare terminal); the
+board works without it too, but then stops watching when you close it.
 
 ## Use
 
 ```sh
 sprat                 # the Pass: a board of every project, what needs you, what Sprat is doing
-sprat serve           # run the observer/PM as a daemon; boards connect over <data>/v4/sprat.sock and get every change pushed
+sprat serve           # the observer/PM as a daemon; boards connect over its socket and get every change pushed
 sprat status          # one line per project: roadmap position, last progress, live sessions
 sprat brief           # today's brief, one lowercase line per project
 sprat install-agent   # start `sprat serve` at login (writes a launchd agent; prints how to remove it)
+sprat voice setup     # talk to the board: installs sox and whisper.cpp and fetches the model, asking first
 sprat attach [path]   # opt-in Verify: Sprat runs the project's checks when an agent tries to stop
-sprat legacy          # the V1 research product
+sprat detach [path]   # remove that Stop hook
+sprat legacy          # the V1 research product (parked)
 ```
+
+On the board, `?` explains the screen you are on. The keys you will use most: `←→`
+tickets, `↑↓` projects, `⏎` open, `f` do what the ticket proposes, `x` dismiss, `space`
+hold to talk, `a` activity, `b` brief, `/` commands (`/settings`, `/findings`, `/nudges`,
+`/add <path>`, `/stats`), and on a project `A` autonomy, `r` its roadmap, `w` confirm it.
 
 `SPRAT_DRY_RUN=1` runs everything (investigations included) but types nothing into any
 session and starts no session; what would have been sent goes to `<data>/v4/dry-run.log`.
+`<data>` is `~/Library/Application Support/sprat` on macOS and `~/.local/share/sprat` on
+Linux.
 
 ### How it sees your work (no setup)
 
@@ -57,10 +92,23 @@ session and starts no session; what would have been sent goes to `<data>/v4/dry-
 ### Talking to a session from the board
 
 Open a session (⏎ on it in a project) and its screen is the session: its own terminal,
-mirrored live from its cmux tab (`tab` switches to the condensed transcript). Type to write
-to it and ⏎ sends your words as typed, waiting until its prompt is free; the NOW band shows
-the message going out. When the session shows a dialog (a permission question, a menu),
-1–9, ↑↓ and ⏎ answer it from the board. `ctrl-o` jumps to the session's own tab.
+mirrored live from its cmux tab. `↑↓` and `pgup`/`pgdn` scroll back through its history;
+scrolling to the bottom follows it live again. Type to write to it and ⏎ sends your words as
+typed, waiting until its prompt is free; the NOW band shows the message going out. When the
+session shows a dialog (a permission question, a menu), 1–9, ↑↓ and ⏎ answer it from the
+board. `ctrl-o` jumps to the session's own tab.
+
+`tab` cycles the terminal, the condensed transcript and the **recap**: what the session did
+over the last 1, 4, 12 or 24 hours (`←→`). It is read from the session's transcript and its
+subagents' tool calls, without a model: the prompts from you and from Sprat, where each turn
+ended, the repositories it worked in (a session started in one folder that works in another
+repo shows that repo), its commits, failed test runs and usage limits.
+
+A session that has gone quiet says why on its row and on its screen (it finished its turn,
+it asked you something, it waits for your ok to run a command, it hit a usage limit, you
+are typing there) and what Sprat will do about it next. When Sprat writes to a session, it
+names a roadmap item only when the session's own recent conversation or branch shows it is
+working on it; otherwise it asks it to continue from where it stopped.
 
 ### What Sprat is doing
 
@@ -110,6 +158,35 @@ Guardrails are code, not prompts (`Sprat.PM.Policy`): owner-only content is refu
 message per session per 20 min, three investigations per finding, daily budgets ($3 per
 project, $15 fleet by default), never the same message twice, never while you are typing.
 
+### Settings, privacy and cost
+
+`/settings` on the board sets autonomy, the PM's budgets and accounts. Investigations run
+`claude -p` on your own Claude account, so they cost what any Claude Code use costs; the
+daily caps above bound it. Everything else (watching, the board, voice) runs on your
+machine and costs nothing. Sprat sends nothing to sprat.dev.
+
+| Environment | Effect |
+|---|---|
+| `SPRAT_DRY_RUN=1` | do everything but type into sessions or start them |
+| `SPRAT_PM_DISABLED=1` | no investigations at all: watch and report only |
+| `SPRAT_CLAUDE_DIRS=a:b` | watch exactly these Claude config dirs instead of discovering them |
+| `SPRAT_CLAUDE_BIN=path` | the `claude` binary investigations run |
+| `NO_COLOR=1`, `SPRAT_ASCII=1` | no colour; ASCII glyphs only |
+| `SPRAT_REDUCED_MOTION=1` | no animation on the board |
+| `SPRAT_TZ=Europe/London` | the time zone for the board's clock and dates |
+| `SPRAT_DATA_DIR=path` | keep Sprat's data somewhere else |
+
+### Update and uninstall
+
+```sh
+curl -fsSL https://sprat.dev/install.sh | sh     # update: the installer replaces the version in place
+brew upgrade sprat                               # or with Homebrew
+
+launchctl unload -w ~/Library/LaunchAgents/dev.sprat.serve.plist; rm -f ~/Library/LaunchAgents/dev.sprat.serve.plist
+rm -rf ~/.local/lib/sprat ~/.local/bin/sprat     # the installer's files (your data stays in <data>)
+brew uninstall sprat                             # or with Homebrew
+```
+
 ## Development
 
 Requires Elixir 1.19.5 / OTP 28.3.1 (see `.tool-versions`).
@@ -132,8 +209,11 @@ lib/sprat/observer/   sessions, transcripts, usage limits, session state, detect
 lib/sprat/roadmap/    roadmap sources, parsers, .sprat/roadmap.md, position, progress
 lib/sprat/pm/         PM runner (claude -p), policy, MCP tool server
 lib/sprat/nudge/      delivery into live sessions (cmux, tmux, clipboard)
-lib/sprat/engine/     the engine's snapshot, commands, runtime (daemon/client), notifier
-lib/sprat/terminal/board*  the Pass TUI
+lib/sprat/engine/     the engine: snapshot, commands, runtime (daemon/client), publisher, socket,
+                      process map and tracer (the processes screen), notifier
+lib/sprat/terminal/board*  the Pass TUI (board, keys, help, the processes screen's pulse and tank)
+lib/sprat/voice/      hold-to-talk: recording, local transcription, spoken commands
+lib/sprat/verify/     opt-in Verify: the Stop hook and its checks
 lib/sprat/brief.ex    the daily brief
 ```
 
@@ -141,7 +221,8 @@ lib/sprat/brief.ex    the daily brief
 
 | Document | What it is |
 |---|---|
-| [docs/spec-v4.md](docs/spec-v4.md) | **Current.** V4: Sprat as PM for every Claude Code agent; the Pass TUI |
+| [docs/spec-v4.md](docs/spec-v4.md) | **Current product.** V4: Sprat as PM for every Claude Code agent; the Pass TUI |
+| [docs/spec-v5-architecture.md](docs/spec-v5-architecture.md) | **Current architecture.** `sprat serve` as an OTP tree: observers, engine, publisher, socket |
 | [docs/phase-v4/00-spikes.md](docs/phase-v4/00-spikes.md) | V4 Phase 0: transcript shapes, delivery, usage-limit formats, PM runtime |
 | [PRODUCT.md](PRODUCT.md) | Product record for design work |
 | [docs/spec-v3.md](docs/spec-v3.md) | V3 supervisor (goals, checks, Stop gate); partly superseded, Verify built from it |

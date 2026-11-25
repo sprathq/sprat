@@ -45,6 +45,7 @@ defmodule Mix.Tasks.Sprat.Screenshots do
        36},
       {"session", Enum.at(story, 4), 100, 34},
       {"transcript", %{base | screen: {:session, "cf-4b"}, session_index: 7}, 100, 30},
+      {"recap", recap(base), 100, 34},
       {"help", Enum.at(story, 5), 100, 44},
       {"activity", activity(base), 100, 34},
       {"brief", %{base | overlay: {:brief, brief_text()}}, 100, 34},
@@ -407,6 +408,59 @@ defmodule Mix.Tasks.Sprat.Screenshots do
     Enum.reduce(1..7, view, fn k, v ->
       View.put_process_map(v, map.(reading.(k), k * 500, if(k == 7, do: flows, else: [])))
     end)
+  end
+
+  # A session's recap: four hours of a session that moved repos mid-way.
+  defp recap(view) do
+    at = fn min -> DateTime.add(@now, (min - 240) * 60) end
+    e = fn min, kind, text -> %{at: at.(min), kind: kind, text: text} end
+
+    recap = %{
+      since: at.(0),
+      from: at.(2),
+      cut?: false,
+      counts: %{
+        you: 4,
+        sprat: 1,
+        turns: 6,
+        edits: 38,
+        commits: 9,
+        tests: 27,
+        failed: 2,
+        limits: 1
+      },
+      repos: [{"cupful", 96}, {"cupful_ios", 61}, {"cupful_backend", 7}],
+      timeline: [
+        e.(2, :you, "Build the shared points ledger for cafe networks (C.4)"),
+        e.(20, :commit, "feat: ledger schema and migration"),
+        e.(41, :commit, "feat: post points across member cafes"),
+        e.(58, :failed, "mix test test/cupful/ledger_test.exs"),
+        e.(66, :commit, "fix: one ledger row per redemption, not per cafe"),
+        e.(71, :said, "C.4's ledger is in and tested. Next is cross-cafe redemption."),
+        e.(74, :you, "Before that: the iOS app needs the ledger balance on the card"),
+        e.(96, :commit, "feat: iOS card shows the network balance"),
+        e.(118, :commit, "fix: refresh the balance after a scan"),
+        e.(121, :said, "The iOS card shows the network balance and refreshes after each scan."),
+        e.(124, :stop, "You've hit your limit · resets 13:10"),
+        e.(
+          191,
+          :sprat,
+          "Your usage limit has reset. Continue from where you stopped: the iOS card shows the network balance."
+        ),
+        e.(203, :commit, "feat: cross-cafe redemption"),
+        e.(219, :failed, "mix test"),
+        e.(226, :commit, "fix: refuse a redemption past the network's daily cap"),
+        e.(231, :commit, "test: redemption across two cafes"),
+        e.(
+          233,
+          :said,
+          "Cross-cafe redemption is in. Should a network be able to set its own daily cap?"
+        ),
+        e.(236, :you, "Yes, per network; default 3")
+      ]
+    }
+
+    View.put_recap(%{view | screen: {:session, "cf-4b"}, session_mode: :recap}, "cf-4b", 4, recap)
   end
 
   defp brief_text do

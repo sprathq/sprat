@@ -148,7 +148,10 @@ defmodule Sprat.Observer.Model do
               # transcript line of the newest event of any kind
               last_event_line: nil,
               # lines of the last N (10) assistant records, newest first; W3's window
-              recent_assistant_lines: []
+              recent_assistant_lines: [],
+              # the main thread's newest action, as `Sprat.Engine.Beats` names
+              # it: `{at, kind, label}` (edited a file, ran a command, wrote…)
+              last_action: nil
 
     @type t :: %__MODULE__{}
   end

@@ -39,6 +39,7 @@ defmodule Sprat.EngineTest do
     h = start(opts)
     root = repo(h, "proj")
     session(h, @sid, root)
+    append(h, @sid, [user(DateTime.add(t0(), -600), "Carry on with A.2")])
     append(h, @sid, error_loop(DateTime.add(t0(), -480)))
     {h, root}
   end
@@ -525,10 +526,15 @@ defmodule Sprat.EngineTest do
     started = DateTime.add(t0(), -600)
 
     # Session one was looping when the limit hit: L1 would want a PM run.
-    append(h, @sid, error_loop(started) ++ [limit(DateTime.add(started, 240), @limit)])
+    append(
+      h,
+      @sid,
+      [user(DateTime.add(started, -60), "Next: A.2")] ++
+        error_loop(started) ++ [limit(DateTime.add(started, 240), @limit)]
+    )
 
     append(h, @sid2, [
-      user(started, "Write the deal resolution tests"),
+      user(started, "Write the deal resolution tests for A.2"),
       say(DateTime.add(started, 60), "Writing the member-venue deal tests now."),
       limit(DateTime.add(started, 200), @limit)
     ])
@@ -580,6 +586,31 @@ defmodule Sprat.EngineTest do
 
     # The loop held during the limit has aged out: it is not investigated late.
     refute_received {:pm, _, _}
+  end
+
+  test "Q1: a session talking about other work is not told the project's roadmap item" do
+    h = start()
+    root = repo(h, "proj")
+    session(h, @sid, root, status: :idle)
+    started = DateTime.add(t0(), -600)
+
+    append(h, @sid, [
+      user(started, "[sprat] Continue with A.2 Loyalty.Networks context"),
+      user(DateTime.add(started, 10), "Build the iOS scan shortcuts in the other repo"),
+      say(DateTime.add(started, 60), "Task 4 passed. Next is Task 5: the iOS scan shortcuts."),
+      limit(DateTime.add(started, 200), @limit)
+    ])
+
+    pm(h, ok(unblock(action: :wait, message: nil)))
+    tick(h)
+    set_now(h, ~U[2026-11-23 11:51:00Z])
+    tick(h)
+
+    assert_received {:deliver, @sid, text, _}
+
+    assert text ==
+             "[sprat] Your usage limit has reset. Continue from where you stopped: " <>
+               "Task 4 passed. Next is Task 5: the iOS scan shortcuts."
   end
 
   test "W1: a question for the owner goes to the PM, escalates as yours, and dismissal sticks" do

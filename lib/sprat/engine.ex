@@ -750,7 +750,7 @@ defmodule Sprat.Engine do
   def limit_resume_text(state, %Finding{} = f, lead) do
     session = Map.get(state.sessions, f.session_id)
     project = Map.get(state.projects, f.project_root)
-    item = project && item_for(project, session)
+    item = project && item_for(state, project, session)
     step = last_step(state, f.session_id)
 
     lead <>
@@ -1127,7 +1127,7 @@ defmodule Sprat.Engine do
   defp act(state, %Finding{} = f, %Decision{} = d, run_id, now) do
     project = Map.get(state.projects, f.project_root)
     session = Map.get(state.sessions, f.session_id)
-    item = project && item_for(project, session, d.next_item)
+    item = project && item_for(state, project, session, d.next_item)
 
     ctx = %{
       autonomy: (project && project.autonomy) || :propose,
@@ -1789,13 +1789,62 @@ defmodule Sprat.Engine do
   def put_finding(state, %Finding{} = f),
     do: %{state | findings: Map.put(state.findings, f.id, f)}
 
-  defp item_for(project, session, preferred_id \\ nil)
+  # The roadmap item a prompt to this session names. One the PM chose stands;
+  # otherwise the project's current item is named only when the session shows
+  # it is on it: its branch is the item's, or its recent conversation mentions
+  # it. A session started in one folder can be working on something else
+  # entirely, and a wrong item in a prompt sends it off course.
+  defp item_for(state, project, session, preferred_id \\ nil)
 
-  defp item_for(%Project{roadmap: nil}, _session, _id), do: nil
+  defp item_for(_state, %Project{roadmap: nil}, _session, _id), do: nil
 
-  defp item_for(%Project{roadmap: rm} = p, session, id) do
-    (id && Roadmap.find_item(rm, id)) || (session && Detector.bound_item(p, session)) ||
-      (p.position && p.position.item_id && Roadmap.find_item(rm, p.position.item_id))
+  defp item_for(state, %Project{roadmap: rm} = p, session, id) do
+    case id && Roadmap.find_item(rm, id) do
+      nil -> session && session_item(state, p, session)
+      item -> item
+    end
+  end
+
+  defp session_item(state, %Project{roadmap: rm} = p, %Session{} = session) do
+    candidate =
+      Detector.bound_item(p, session) ||
+        (p.position && p.position.item_id && Roadmap.find_item(rm, p.position.item_id))
+
+    cond do
+      candidate == nil -> nil
+      session.branch && candidate.branch == session.branch -> candidate
+      mentioned?(recent_talk(state, session.session_id), candidate) -> candidate
+      true -> nil
+    end
+  end
+
+  @recent_messages 30
+
+  @doc false
+  # The text of the session's last messages on its main thread, the agent's
+  # and the owner's, without Sprat's own prompts (they would echo its guess).
+  def recent_talk(state, sid) do
+    state.events
+    |> Map.get(sid, [])
+    |> Enum.filter(fn
+      %{kind: kind, sidechain?: false} when kind in [:assistant_text, :user_text] -> true
+      _ -> false
+    end)
+    |> Enum.map(&(&1.data[:text] || ""))
+    |> Enum.reject(&String.starts_with?(&1, "[sprat]"))
+    |> Enum.take(-@recent_messages)
+    |> Enum.join("\n")
+  end
+
+  @doc false
+  def mentioned?("", _item), do: false
+
+  def mentioned?(talk, item) do
+    id = Regex.escape(item.id)
+    text = item.text |> String.trim() |> String.downcase()
+
+    Regex.match?(~r/(?<![\w.])#{id}(?![\w]|\.\d)/, talk) or
+      (String.length(text) >= 8 and String.contains?(String.downcase(talk), text))
   end
 
   defp roadmap_suffix(nil), do: ""

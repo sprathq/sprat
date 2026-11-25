@@ -1,7 +1,8 @@
 # Contributing
 
 Issues are welcome: bugs, rough edges, and ideas. Please include your OS, your
-terminal, `sprat --version`, and what you expected to see.
+terminal, the version (the site's install page, or `ls ~/.local/lib/sprat/versions`),
+and what you expected to see.
 
 For anything larger than a small fix, open an issue first so we can agree on the
 approach before you write code.

@@ -35,3 +35,4 @@ spikes/experiment/runs/
 # git worktrees used for isolated agent work
 /.worktrees/
 .claude/worktrees/
+/_build_main/

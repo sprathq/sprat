@@ -18,6 +18,7 @@ defmodule Sprat.Engine.Snapshot do
       now: now,
       projects: projects,
       tickets: tickets(state, now),
+      quiet: quiet(state, projects, now),
       served: served(state, midnight),
       jobs: jobs(state, now),
       activity: Sprat.Activity.recent(200),
@@ -49,6 +50,28 @@ defmodule Sprat.Engine.Snapshot do
     # now: the board calls a project limited only while all of them are.
     dirs = Enum.uniq((p.config_dirs || []) ++ Sprat.Engine.project_accounts(state, root))
     %{p | sessions: sessions, config_dirs: dirs}
+  end
+
+  # Why each live session that is not working is quiet, what it last did and
+  # what Sprat means to do about it (`Sprat.Engine.Quiet`), by session id.
+  defp quiet(state, projects, now) do
+    findings = state.findings |> Map.values() |> Enum.group_by(& &1.session_id)
+
+    for %Project{} = p <- projects,
+        s <- p.sessions,
+        into: %{} do
+      item = p.roadmap && Sprat.Observer.Detector.bound_item(p, s)
+
+      {s.session_id,
+       Sprat.Engine.Quiet.explain(s, %{
+         now: now,
+         state: Map.get(state.states, s.session_id),
+         account: s.config_dir && Map.get(state.accounts, s.config_dir),
+         project: p,
+         item: item,
+         findings: Map.get(findings, s.session_id, [])
+       })}
+    end
   end
 
   # The VM as the activity screen shows it: the supervised processes with

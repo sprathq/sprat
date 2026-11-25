@@ -210,10 +210,12 @@ defmodule Sprat.Terminal.Board.KeysTest do
                press(in_session(), {:paste, "pasted"})
     end
 
-    test "? is still help; tab switches terminal and transcript; ctrl-o goes to its tab" do
+    test "? is still help; tab cycles terminal, transcript and recap; ctrl-o goes to its tab" do
       assert {%{help?: true}, []} = press(in_session(), {:char, "?"})
       {v, []} = press(in_session(), :tab)
       assert v.session_mode == :transcript
+      {v, []} = press(v, :tab)
+      assert v.session_mode == :recap
       {v, []} = press(v, :tab)
       assert v.session_mode == :terminal
       assert {_, [{:open_session_terminal, "cf-4b"}]} = press(in_session(), {:ctrl, "o"})

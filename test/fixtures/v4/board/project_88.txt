@@ -17,9 +17,9 @@
 
  SESSIONS ─────────────────────────────────────────────────────────────────────────────
  ⏸ cafe-networks-4b     waiting on you 18m
- ⠋ tv-venue-leaderboard mix test · working 5m
  ⠋ cafe-networks-7d     editing network_live.ex · working 5m
- ◌ Lantern              idle since 11:40
+ ⠋ tv-venue-leaderboard working 5m · running for 9m: mix test test/cupful/ledger_test.…
+ ◌ Lantern              idle since 11:40 · its item is done; sprat leaves it · wrote “…
 
  SERVED ─ last 7 days ─────────────────────────────────────────────────────────────────
  12:02  answered "Postgres or SQLite?" from spec-v3 §5

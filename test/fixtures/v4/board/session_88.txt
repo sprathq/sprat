@@ -1,6 +1,8 @@
  SPRAT <•<  › cupful  › cafe-networks-4b                            waiting on you 18m
+ why   asked you: Keep network_id on members, or move it to a join table? · last: aske…
+ next  waits for you; sprat sends it nothing
 
- TRANSCRIPT ─ condensed · no cmux tab to mirror ──────────────────────────── ⏎ expand ─
+ TRANSCRIPT ─ condensed · no cmux tab to mirror ──────────────── ⏎ expand · tab recap ─
  13:22  you    continue C.4 shared points ledger from the plan
  13:23  agent  Reading the plan and the current schema.
  13:24  tool   Read plans/2026-11-14-cafe-networks.md
@@ -23,8 +25,6 @@
 
 
 
-
-
   ─────────────────────────────────────────────────────────────────────────────────────
  › type to talk to cafe-networks-4b
- type message  ↑↓ scroll  ⏎ expand  esc back  ? help
+ type message  ↑↓ scroll  ⏎ expand  tab recap  esc back  ? help

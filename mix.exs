@@ -4,7 +4,7 @@ defmodule Sprat.MixProject do
   def project do
     [
       app: :sprat,
-      version: "0.4.7",
+      version: "0.4.8",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),

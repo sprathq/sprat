@@ -6,15 +6,13 @@ defmodule Sprat.Roadmap.RealMachineTest do
   """
   use ExUnit.Case, async: false
 
-  alias Sprat.Roadmap, as: RM
-  alias Sprat.Roadmap.{Position, Progress}
-
   @moduletag :real_machine
 
   # The repositories to read: SPRAT_REAL_REPOS, separated by colons.
   @repos "SPRAT_REAL_REPOS" |> System.get_env("") |> String.split(":", trim: true)
 
-  defp commits(root) do
+  # Public: with no SPRAT_REAL_REPOS no test is generated to call it.
+  def commits(root) do
     case System.cmd(
            "git",
            ["-C", root, "log", "--all", "-n", "3000", "--format=%H%x1f%cI%x1f%s%x1f%D"],
@@ -45,6 +43,9 @@ defmodule Sprat.Roadmap.RealMachineTest do
   for root <- @repos do
     @root root
     test "builds a roadmap for #{Path.basename(root)} without writing anything" do
+      alias Sprat.Roadmap, as: RM
+      alias Sprat.Roadmap.{Position, Progress}
+
       if File.dir?(@root) do
         before = File.exists?(Path.join(@root, ".sprat/roadmap.md"))
         now = DateTime.utc_now()

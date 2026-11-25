@@ -114,28 +114,53 @@ defmodule Sprat.Terminal.Board.Keys do
 
   # On a session's screen the keyboard talks to the session: typing starts a
   # message to it; while its terminal shows a dialog, digits, arrows and ⏎
-  # answer the dialog. `?` stays help, tab switches terminal/transcript,
+  # answer the dialog. `?` stays help, tab cycles terminal, transcript and recap,
   # ctrl-o goes to the session's own cmux tab.
   defp session_keys(%View{screen: {:session, sid}, opened_ticket: nil, overlay: nil} = view, key) do
     dialog? = View.session_dialog?(view, sid)
 
     case key do
-      {:char, d} when dialog? and d in ~w(1 2 3 4 5 6 7 8 9) -> {view, [{:session_key, sid, d}]}
-      :up when dialog? -> {view, [{:session_key, sid, "up"}]}
-      :down when dialog? -> {view, [{:session_key, sid, "down"}]}
-      :enter when dialog? -> {view, [{:session_key, sid, "enter"}]}
-      {:char, "?"} -> nil
-      {:char, c} -> {open_composer(view, :to_session, sid, c), []}
-      {:paste, text} -> {open_composer(view, :to_session, sid, text), []}
-      :tab -> {%{view | session_mode: toggle_mode(view.session_mode)}, []}
-      {:ctrl, "o"} -> {view, [{:open_session_terminal, sid}]}
-      _ -> nil
+      {:char, d} when dialog? and d in ~w(1 2 3 4 5 6 7 8 9) ->
+        {view, [{:session_key, sid, d}]}
+
+      :up when dialog? ->
+        {view, [{:session_key, sid, "up"}]}
+
+      :down when dialog? ->
+        {view, [{:session_key, sid, "down"}]}
+
+      :enter when dialog? ->
+        {view, [{:session_key, sid, "enter"}]}
+
+      {:char, "?"} ->
+        nil
+
+      {:char, c} ->
+        {open_composer(view, :to_session, sid, c), []}
+
+      {:paste, text} ->
+        {open_composer(view, :to_session, sid, text), []}
+
+      :tab ->
+        {%{
+           view
+           | session_mode: toggle_mode(view.session_mode),
+             mirror_scroll: 0,
+             recap_scroll: 0
+         }, []}
+
+      {:ctrl, "o"} ->
+        {view, [{:open_session_terminal, sid}]}
+
+      _ ->
+        nil
     end
   end
 
   defp session_keys(_view, _key), do: nil
 
   defp toggle_mode(:terminal), do: :transcript
+  defp toggle_mode(:transcript), do: :recap
   defp toggle_mode(_), do: :terminal
 
   @doc "The `/` commands, for the command line's completion menu."
@@ -295,7 +320,27 @@ defmodule Sprat.Terminal.Board.Keys do
 
   # == a session ===============================================================
 
-  defp screen_key(%View{screen: {:session, sid}} = view, key) do
+  # The mirrored terminal: ↑↓ and pgup/pgdn scroll it through its
+  # scrollback; esc goes back. Each read fetches enough scrollback to show
+  # the offset, so scrolling further reads further.
+  defp screen_key(%View{screen: {:session, sid}} = view, key)
+       when key in [:up, :down, :page_up, :page_down] do
+    cond do
+      view.session_mode == :recap -> {scroll_recap(view, sid, key), []}
+      View.mirroring?(view, sid) -> {scroll_mirror(view, sid, key), []}
+      true -> transcript_key(view, sid, key)
+    end
+  end
+
+  # The recap: ←→ widen or narrow the hours it covers.
+  defp screen_key(%View{screen: {:session, _sid}, session_mode: :recap} = view, key)
+       when key in [:left, :right] do
+    {%{view | recap_hours: step_hours(view.recap_hours, key), recap_scroll: 0}, []}
+  end
+
+  defp screen_key(%View{screen: {:session, sid}} = view, key), do: transcript_key(view, sid, key)
+
+  defp transcript_key(view, sid, key) do
     n = length(View.session_lines(view, sid))
 
     case key do
@@ -306,7 +351,13 @@ defmodule Sprat.Terminal.Board.Keys do
             nil -> :board
           end
 
-        {View.clamp(%{view | screen: back, session_expanded: MapSet.new()}), []}
+        {View.clamp(%{
+           view
+           | screen: back,
+             session_expanded: MapSet.new(),
+             mirror_scroll: 0,
+             recap_scroll: 0
+         }), []}
 
       :up ->
         {%{view | session_index: max(view.session_index - 1, 0)}, []}
@@ -330,6 +381,48 @@ defmodule Sprat.Terminal.Board.Keys do
       _ ->
         {view, []}
     end
+  end
+
+  @mirror_page 10
+  @mirror_max 5_000
+
+  @recap_hours [1, 4, 12, 24]
+
+  @doc false
+  def recap_hours, do: @recap_hours
+
+  defp step_hours(h, key) do
+    i = Enum.find_index(@recap_hours, &(&1 == h)) || 1
+    j = if key == :left, do: max(i - 1, 0), else: min(i + 1, length(@recap_hours) - 1)
+    Enum.at(@recap_hours, j)
+  end
+
+  defp scroll_recap(view, sid, key) do
+    n =
+      case View.recap(view, sid),
+        do: (
+          nil -> 0
+          r -> length(r.timeline)
+        )
+
+    step = %{up: 1, down: -1, page_up: 10, page_down: -10}[key]
+    %{view | recap_scroll: (view.recap_scroll + step) |> max(0) |> min(max(n - 1, 0))}
+  end
+
+  defp scroll_mirror(view, sid, key) do
+    step =
+      case key do
+        :up -> 1
+        :down -> -1
+        :page_up -> @mirror_page
+        :page_down -> -@mirror_page
+      end
+
+    # Up to the oldest line read so far, plus a page, so the next read
+    # (which asks for that much more scrollback) can go further.
+    read = length(View.mirror_lines(View.session_screen(view, sid)))
+    top = min(max(read - 1, 0) + @mirror_page, @mirror_max)
+    %{view | mirror_scroll: (view.mirror_scroll + step) |> max(0) |> min(top)}
   end
 
   # == board movement ==========================================================
@@ -497,7 +590,15 @@ defmodule Sprat.Terminal.Board.Keys do
         {%{view | status: "session not found"}, []}
 
       _ ->
-        view = %{view | screen: {:session, sid}, opened_ticket: nil, session_lines: nil}
+        view = %{
+          view
+          | screen: {:session, sid},
+            opened_ticket: nil,
+            session_lines: nil,
+            mirror_scroll: 0,
+            recap_scroll: 0
+        }
+
         {%{view | session_index: last_line_index(view, sid)}, [{:session_lines, sid}]}
     end
   end

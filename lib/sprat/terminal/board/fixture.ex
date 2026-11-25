@@ -34,6 +34,7 @@ defmodule Sprat.Terminal.Board.Fixture do
       utc_offset: 0,
       projects: projects(ago),
       tickets: tickets(ago),
+      quiet: quiet(ago),
       served: served(ago),
       header: %{
         pm_spend: Decimal.new("2.40"),
@@ -53,6 +54,37 @@ defmodule Sprat.Terminal.Board.Fixture do
   end
 
   defp root(name), do: Path.join(@home, name)
+
+  # What `Sprat.Engine.Quiet` says about the sessions that are not working.
+  defp quiet(ago) do
+    %{
+      "cf-4b" => %{
+        reason: {:question, "Keep network_id on members, or move it to a join table?"},
+        last: {ago.(18), :ask, nil},
+        plan: :waits_for_you
+      },
+      "bc-tv" => %{
+        reason: {:running, "mix test test/cupful/ledger_test.exs", ago.(9)},
+        last: {ago.(9), :run, "mix test test/cupful/ledger_test.exs"},
+        plan: nil
+      },
+      "bc-pm" => %{
+        reason: :turn_done,
+        last: {ago.(142), :say, "Ledger totals reconcile across cafés."},
+        plan: {:nothing, :item_done}
+      },
+      "gi-12" => %{
+        reason: :turn_done,
+        last: {ago.(7), :edit, "OnboardingView.swift"},
+        plan: {:check_at, ago.(-23), :act}
+      },
+      "id-1" => %{
+        reason: {:limit, ago.(-68)},
+        last: {ago.(2 * 1440), :run, "eas build --platform ios"},
+        plan: {:continue_at, ago.(-68)}
+      }
+    }
+  end
 
   defp session(id, name, status, ago, opts) do
     %Session{
@@ -141,7 +173,7 @@ defmodule Sprat.Terminal.Board.Fixture do
             title: "editing network_live.ex",
             active: 2
           ),
-          session("bc-tv", "tv-venue-leaderboard", :busy, ago, title: "mix test", active: 1),
+          session("bc-tv", "tv-venue-leaderboard", :busy, ago, title: "mix test", active: 9),
           session("bc-pm", "Lantern", :idle, ago, since: 142, active: 142)
         ]
       },

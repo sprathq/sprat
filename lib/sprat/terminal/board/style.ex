@@ -3,10 +3,12 @@ defmodule Sprat.Terminal.Board.Style do
   The Pass palette, glyph translation and line assembly (`docs/spec-v4.md`
   §10.7–10.8). Pure.
 
-  Sprat never paints the background: every role here is a foreground colour
-  and/or an attribute (bold, faint, reverse). The only "filled" shape is the
-  age chip, which is reverse video of a foreground role, never a background
-  colour code.
+  Sprat paints one background only: `:row`, a faint warm band behind the
+  selected row of a list (`highlight/3`), so the right-hand columns of the
+  row under the cursor are easy to find. Every other role is a foreground
+  colour and/or an attribute (bold, faint, reverse); the age chip is reverse
+  video of a foreground role. In 16 colours and NO_COLOR there is no band,
+  and the `›` marker carries the selection alone.
 
   A line is built from segments, `{text, style}`, where `style` is a role
   atom (`:text`, `:bright`, `:quiet`, `:rule`, `:you`, `:stuck`,
@@ -37,7 +39,8 @@ defmodule Sprat.Terminal.Board.Style do
     stuck: "38;2;200;67;47",
     progress: "38;2;167;194;122",
     # Claude Code's own coral: a mirrored session is Claude's, not Sprat's.
-    claude: "38;2;217;119;87"
+    claude: "38;2;217;119;87",
+    row: "48;2;52;48;42"
   }
 
   @c256 %{
@@ -48,7 +51,8 @@ defmodule Sprat.Terminal.Board.Style do
     you: "38;5;179",
     stuck: "38;5;167",
     progress: "38;5;150",
-    claude: "38;5;173"
+    claude: "38;5;173",
+    row: "48;5;236"
   }
 
   @c16 %{
@@ -59,7 +63,8 @@ defmodule Sprat.Terminal.Board.Style do
     you: "33",
     stuck: "31",
     progress: "32",
-    claude: "35"
+    claude: "35",
+    row: ""
   }
 
   # NO_COLOR: no colour codes at all, but bold and faint are attributes,
@@ -72,7 +77,8 @@ defmodule Sprat.Terminal.Board.Style do
     you: "",
     stuck: "",
     progress: "",
-    claude: ""
+    claude: "",
+    row: ""
   }
 
   @modifiers %{bold: "1", faint: "2", reverse: "7"}
@@ -160,7 +166,8 @@ defmodule Sprat.Terminal.Board.Style do
   def paint(text, style, ctx) do
     # Plain spaces need no colour (no background is ever painted), unless
     # reversed: the age chip's padding is part of its filled shape.
-    blank? = String.trim(text, " ") == "" and :reverse not in List.wrap(style)
+    styles = List.wrap(style)
+    blank? = String.trim(text, " ") == "" and :reverse not in styles and :row not in styles
 
     case if(blank?, do: "", else: sgr(style, ctx)) do
       "" -> text
@@ -321,6 +328,16 @@ defmodule Sprat.Terminal.Board.Style do
     else
       fit_segs(left, width - rw, ctx) ++ right
     end
+  end
+
+  @doc """
+  The selected row of a list: its segments padded to `width` and set on the
+  `:row` background, so the band runs the row's full width.
+  """
+  def highlight(segs, width, ctx) do
+    segs
+    |> fit_segs(width, ctx)
+    |> Enum.map(fn {t, style} -> {t, List.wrap(style) ++ [:row]} end)
   end
 
   @doc "A run of spaces as a segment."

@@ -301,8 +301,67 @@ defmodule Sprat.Terminal.BoardTest do
     end
   end
 
+  describe "a session's recap" do
+    test "counts, the repos it worked in and a timeline, newest at the bottom" do
+      v = %{view() | screen: {:session, "cf-4b"}, session_mode: :recap}
+      assert text(render(v, 88, 30)) =~ "reading its transcript"
+
+      recap = %{
+        since: @now,
+        from: @now,
+        cut?: false,
+        counts: %{
+          you: 2,
+          sprat: 1,
+          turns: 3,
+          edits: 5,
+          commits: 1,
+          tests: 4,
+          failed: 1,
+          limits: 0
+        },
+        repos: [{"cupful_ios", 12}, {"cupful", 2}],
+        timeline: [
+          %{at: @now, kind: :you, text: "Drop flutter; build the iOS app"},
+          %{at: @now, kind: :failed, text: "xcodebuild test"},
+          %{at: @now, kind: :commit, text: "feat: iOS scan shortcuts"},
+          %{at: @now, kind: :said, text: "Task 5 passed review."}
+        ]
+      }
+
+      t = text(render(View.put_recap(v, "cf-4b", 4, recap), 120, 30))
+      assert t =~ "RECAP ─ last 4h"
+      assert t =~ "1h [4h] 12h 24h"
+
+      assert t =~
+               "2 prompts from you · 1 from sprat · 3 turns · 5 edits · 1 commit · 4 test runs, 1 failed"
+
+      assert t =~ "worked in  cupful_ios 12 · cupful 2"
+      assert t =~ ~r/you +Drop flutter; build the iOS app\n.*failed +xcodebuild test/
+      assert t =~ ~r/commit +feat: iOS scan shortcuts\n.*agent +Task 5 passed review\./
+      assert t =~ "←→ hours"
+
+      # A recap read for other hours is not shown as this span's.
+      refute text(render(%{View.put_recap(v, "cf-4b", 12, recap) | recap_hours: 4}, 88, 30)) =~
+               "worked in"
+    end
+  end
+
   describe "palette and ASCII (§10.7–10.8)" do
-    test "no background colour is ever painted" do
+    test "the selected row of the line sits on a faint band, full width; nothing else does" do
+      v = %{view() | focus: :line, line_index: 1}
+      lines = render(v, 120, 40, %{color: :truecolor})
+      banded = Enum.filter(lines, &(&1 =~ "48;2;52;48;42"))
+      assert [row] = banded
+      assert Width.strip_ansi(row) =~ ~r/^›/
+      # The band runs to the row's right-hand columns, not just its name.
+      assert row =~ ~r/48;2;52;48;42m +11:42\e\[0m$/
+
+      assert Enum.join(render(v, 120, 40, %{color: :c256})) =~ "48;5;236"
+      refute Enum.join(render(v, 120, 40, %{color: :c16})) =~ "\e[4"
+    end
+
+    test "no background colour is painted unless a row is selected" do
       for color <- [:truecolor, :c256, :c16, :none], v <- [view(), open(view())] do
         out = Enum.join(render(v, 120, 40, %{color: color}))
 
@@ -696,16 +755,45 @@ defmodule Sprat.Terminal.BoardTest do
       assert_fits(lines, 100, 30)
       p = plain(lines)
       t = Enum.join(p, "\n")
+      # Why it is quiet and what Sprat will do, above its window.
+      assert Enum.at(p, 1) =~ ~r/^ why   asked you: Keep network_id/
+      assert Enum.at(p, 2) =~ ~r/^ next  waits for you; sprat sends it nothing/
       # Claude's window, not Sprat's: framed and titled as Claude Code, with
       # the session's name and account.
-      assert Enum.at(p, 2) =~
+      assert Enum.at(p, 4) =~
                ~r/^ ╭─ Claude Code · cafe-networks-4b · .*claude ─+ live · surface:12 ─╮$/u
 
       assert Enum.at(p, -3) =~ ~r/^ ╰─+╯$/u
       assert t =~ ~r/│ line 60 +│/
       refute t =~ "line 30 "
       assert Enum.at(p, -2) =~ "› type to talk to cafe-networks-4b"
-      assert List.last(p) =~ "type message  space talk  tab transcript  ^o its tab  esc back"
+
+      assert List.last(p) =~
+               "type message  ↑↓ scroll  space talk  tab transcript  ^o its tab  esc back"
+    end
+
+    test "↑↓ and pgup/pgdn scroll its terminal back; ↓ to the bottom follows it live" do
+      alias Sprat.Terminal.Board.Keys
+      screen = Enum.map_join(1..60, "\n", &"line #{&1}") <> "\n\n> \n\n"
+      v = mirrored(screen)
+
+      {v, []} = Keys.handle(v, :page_up)
+      {v, []} = Keys.handle(v, :up)
+      assert v.mirror_scroll == 11
+      assert v.screen == {:session, "cf-4b"}
+
+      p = plain(render(v, 100, 30))
+      t = Enum.join(p, "\n")
+      assert Enum.at(p, 4) =~ "↑ 11 lines up · ↓ back to live"
+      # 60 lines plus the blank and the prompt: the newest 11 are hidden.
+      assert t =~ ~r/│ line 51 +│/
+      refute t =~ ~r/│ line 52 +│/
+
+      {v, []} = Keys.handle(v, :page_down)
+      {v, []} = Keys.handle(v, :down)
+      {v, []} = Keys.handle(v, :down)
+      assert v.mirror_scroll == 0
+      assert Enum.at(plain(render(v, 100, 30)), 4) =~ "live · surface:12"
     end
 
     test "the frame is drawn in Claude's coral, its title bold; the inside keeps Claude's colours" do
@@ -714,12 +802,12 @@ defmodule Sprat.Terminal.BoardTest do
           color: :truecolor
         })
 
-      top = Enum.at(lines, 2)
+      top = Enum.at(lines, 4)
       assert top =~ "\e[38;2;217;119;87m╭─"
       assert top =~ "\e[38;2;217;119;87;1m Claude Code"
 
       ascii = plain(render(mirrored("hello"), 100, 30, %{ascii?: true}))
-      assert Enum.at(ascii, 2) =~ ~r/^ \+- Claude Code/
+      assert Enum.at(ascii, 4) =~ ~r/^ \+- Claude Code/
       assert Enum.at(ascii, -3) =~ ~r/^ \+-+\+$/
     end
 

@@ -63,11 +63,21 @@ defmodule Sprat.Terminal.Board.View do
             help_index: 0,
             # never opened help: the board says ? explains it
             first_run?: false,
-            # the session screen shows the session's own terminal (:terminal)
-            # or its condensed transcript (:transcript)
+            # the session screen shows the session's own terminal (:terminal),
+            # its condensed transcript (:transcript) or what it did over the
+            # last hours (:recap)
             session_mode: :terminal,
+            # the open session's recap: nil | {sid, hours, Sprat.Recap.t()}
+            recap: nil,
+            # the hours the recap covers
+            recap_hours: 4,
+            # how many lines the recap is scrolled up from its newest
+            recap_scroll: 0,
             # the last read of the open session's terminal: nil | {sid, text}
             session_screen: nil,
+            # how many lines the mirrored terminal is scrolled up from its
+            # bottom (0 follows it live)
+            mirror_scroll: 0,
             # talking to the board: nil | %{state: :listening | :transcribing, hint}
             voice: nil,
             # the processes screen: nil | %{map, rates, born, gone, error}
@@ -619,6 +629,28 @@ defmodule Sprat.Terminal.Board.View do
   end
 
   def mirroring?(_view, _sid), do: false
+
+  @doc """
+  Lines of the session's terminal from the last read, trailing blank lines
+  dropped: what the mirror scrolls through.
+  """
+  def mirror_lines(nil), do: []
+
+  def mirror_lines(text) when is_binary(text) do
+    text
+    |> String.split("\n")
+    |> Enum.map(&String.trim_trailing/1)
+    |> Enum.reverse()
+    |> Enum.drop_while(&(&1 == ""))
+    |> Enum.reverse()
+  end
+
+  @doc "The recap read for session `sid` over the current hours, or nil."
+  def recap(%__MODULE__{recap: {sid, hours, r}, recap_hours: hours}, sid), do: r
+  def recap(_view, _sid), do: nil
+
+  @doc "Stores a recap read for session `sid` over `hours`."
+  def put_recap(%__MODULE__{} = view, sid, hours, recap), do: %{view | recap: {sid, hours, recap}}
 
   @doc "The last read of the session's terminal, or nil."
   def session_screen(%__MODULE__{session_screen: {sid, text}}, sid), do: text

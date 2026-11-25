@@ -84,6 +84,9 @@ defmodule Sprat.Terminal.BoardApp do
           ascii?: Keyword.get_lazy(opts, :ascii?, fn -> Glyphs.ascii?() end),
           mirror_busy?: false,
           procs_busy?: false,
+          # the recap being read, and what and when it last read: {sid, hours, ms}
+          recap_busy?: false,
+          recap_read: nil,
           # the terminal reports key releases (kitty keyboard protocol)
           kitty?: false,
           # a recording in progress: nil | %{rec, pushed?, started, last_space, held?}
@@ -286,7 +289,14 @@ defmodule Sprat.Terminal.BoardApp do
 
       :mirror ->
         Process.send_after(self(), :mirror, @mirror_ms)
-        state |> read_mirror() |> loop()
+        state |> read_mirror() |> read_recap() |> loop()
+
+      {:recap, sid, hours, {:ok, recap}} ->
+        view = View.put_recap(state.view, sid, hours, recap)
+        %{state | view: view, recap_busy?: false} |> paint() |> loop()
+
+      {:recap, _sid, _hours, {:error, _}} ->
+        loop(%{state | recap_busy?: false})
 
       {:mirror_screen, sid, {:ok, text}} ->
         view = View.put_session_screen(state.view, sid, text)
@@ -721,7 +731,8 @@ defmodule Sprat.Terminal.BoardApp do
 
       surface ->
         app = self()
-        lines = max(state.rows, 20)
+        # Scrolled up: read that much more scrollback.
+        lines = max(state.rows, 20) + state.view.mirror_scroll
 
         {:ok, _} =
           Task.start(fn -> send(app, {:mirror_screen, sid, Mirror.read(surface, lines)}) end)
@@ -731,6 +742,49 @@ defmodule Sprat.Terminal.BoardApp do
   end
 
   defp read_mirror(state), do: state
+
+  @recap_ms 15_000
+
+  # While a session's recap is open, read its transcript in a task: at once
+  # for a new session or span, then every 15 seconds.
+  defp read_recap(
+         %{recap_busy?: false, view: %View{screen: {:session, sid}, session_mode: :recap}} =
+           state
+       ) do
+    hours = state.view.recap_hours
+    now_ms = System.monotonic_time(:millisecond)
+
+    due? =
+      case state.recap_read do
+        {^sid, ^hours, at} -> now_ms - at >= @recap_ms
+        _ -> true
+      end
+
+    case due? && transcript_path(state.view, sid) do
+      path when is_binary(path) ->
+        app = self()
+        since = DateTime.add(DateTime.utc_now(), -hours * 3600)
+
+        {:ok, _} =
+          Task.start(fn ->
+            send(app, {:recap, sid, hours, Sprat.Recap.from_file(path, since)})
+          end)
+
+        %{state | recap_busy?: true, recap_read: {sid, hours, now_ms}}
+
+      _ ->
+        state
+    end
+  end
+
+  defp read_recap(state), do: state
+
+  defp transcript_path(view, sid) do
+    case View.session(view, sid) do
+      {%{transcript_path: path}, _p} when is_binary(path) -> path
+      _ -> nil
+    end
+  end
 
   # Sprat's own processes, while their screen is open: read in a task, one
   # reading at a time.
